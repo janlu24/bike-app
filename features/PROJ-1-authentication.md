@@ -1,6 +1,6 @@
 # PROJ-1: Authentication
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
 **Last Updated:** 2026-04-30
 
@@ -29,8 +29,13 @@
 - **tsconfig.json:** `src/alt_bike software` explizit ausgeschlossen (verhindert TS-Fehler aus Legacy-Code)
 - **Types-Pfad:** `src/types/supabase.ts` (gem. Backend-Regeln), nicht `src/lib/supabase/types.ts` wie im Altprojekt
 
-### Noch offen (Frontend, PROJ-1)
-- Login-Page UI (`src/app/login/page.tsx`, `LoginForm.tsx`) — folgt mit `/frontend`
+### Frontend implementiert am 2026-04-30
+- `tailwind.config.ts` — petrol + cockpit Farbpalette ergänzt (shadcn-Tokens bleiben erhalten)
+- `src/app/globals.css` — Dark-Mode CSS-Variablen auf Cockpit-Theme gemappt; Raster-Hintergrund, .data-readout, Petrol-Fokus-Ring
+- `src/app/layout.tsx` — lang="de", class="dark", App-Metadata aktualisiert
+- `src/components/Logo.tsx` — Wortmarke "Setup.Registry" im Cockpit-Stil
+- `src/app/login/LoginForm.tsx` — shadcn/ui Button + Input + Label; useActionState mit signInAction/signUpAction
+- `src/app/login/page.tsx` — Zentrierte Login-Seite mit Logo, Formular-Card, Privacy-Hinweis
 
 ## Dependencies
 - None
