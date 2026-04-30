@@ -1,8 +1,8 @@
 # PROJ-2: Onboarding & Profil-Setup
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30 (Backend implemented)
+**Last Updated:** 2026-04-30 (Frontend implemented)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication) — Nutzer muss eingeloggt sein
@@ -114,6 +114,8 @@ Security (RLS):
 - `src/app/onboarding/schema.ts` — `createProfileSchema` (Zod), `OnboardingFormState` Interface
 - `src/app/onboarding/actions.ts` — `createProfileAction` Server Action (Zod-Validierung, Auth-Check, 23505-Handling, redirect)
 - `src/app/onboarding/schema.test.ts` — 16 Unit-Tests für Schema-Validierung (alle bestanden)
+- `src/app/onboarding/OnboardingForm.tsx` — Client-Komponente (useActionState, shadcn Input/Label/Switch/Button, hidden input für is_public, inline Fehler pro Feld)
+- `src/app/onboarding/page.tsx` — Server-Page (statisch prerenderbar, Logo + Card-Layout analog zu /login)
 
 ### Besonderheiten / Abweichungen
 - `src/types/supabase.ts` erweitert: `Relationships` + `CompositeTypes` für `@supabase/supabase-js` 2.39 PostgREST-12-Kompatibilität (fehlten in handgeschriebenen Typen)
