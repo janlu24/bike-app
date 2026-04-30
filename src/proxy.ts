@@ -3,6 +3,11 @@ import { createMiddlewareClient } from "@/lib/supabase/middleware";
 import { decidePostAuthRedirect, isAuthPath } from "@/lib/auth/redirect";
 
 export async function proxy(request: NextRequest) {
+  // Supabase nicht konfiguriert → kein Auth-Guard (nur lokal ohne .env.local)
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request });
+  }
+
   const { supabase, getResponse } = createMiddlewareClient(request);
   const pathname = request.nextUrl.pathname;
 

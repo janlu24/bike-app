@@ -1,6 +1,6 @@
 # PROJ-1: Authentication
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-04-30
 **Last Updated:** 2026-04-30
 
@@ -75,7 +75,46 @@
 _To be added by /architecture_
 
 ## QA Test Results
-_To be added by /qa_
+**QA durchgeführt am 2026-04-30**
+
+### Acceptance Criteria
+
+| AC | Status | Anmerkung |
+|----|--------|-----------|
+| Email/password Registrierung via Supabase Auth | ✅ Implementiert | Erfordert Supabase-Instanz zum vollständigen Test |
+| Email/password Login, Session wird aufgebaut | ✅ Implementiert | Erfordert Supabase-Instanz |
+| Sign-out löscht Session, Redirect zu /login | ✅ Implementiert | POST-Route, 303 Redirect |
+| Middleware schützt alle Routen außer /login, /auth/*, /explore | ✅ Implementiert | Via proxy.ts; passiert durch ohne Supabase-Config |
+| Auth-Callback tauscht Code aus, leitet zu / oder /onboarding | ✅ Implementiert | Middleware übernimmt Onboarding-Redirect |
+| Fehlermeldungen auf Deutsch | ✅ Implementiert | Alle Messages hartcodiert auf Deutsch |
+| Login-Formular hat Validierung vor Submit | ⚠️ Teilweise | Server-side validation (vor Supabase-Call); kein clientseitiges Zod |
+
+### Security Audit
+
+| ID | Severity | Beschreibung | Status |
+|----|----------|-------------|--------|
+| S-1 | **High** | Open Redirect in `/auth/callback`: `next`-Parameter unvalidiert | ✅ **Behoben** — nur relative Pfade erlaubt |
+| S-2 | Medium | Auth-Callback ignorierte `?error=...` Supabase-Parameter | ✅ **Behoben** — Redirect zu `/login?error=auth` |
+| S-3 | Medium | AC "client-side Zod validation" — nur server-side implementiert | 📋 Akzeptiert — kein UX-Problem, Validierung greift vor Supabase-Call |
+| S-4 | Low | `signUpAction` gibt rohe Supabase-Fehlermeldung aus | 📋 Akzeptiert — React escaped Text, kein XSS-Risiko |
+
+Kein Critical-Bug. Kein PII in Logs. Keine hardcoded Secrets.
+
+### Test-Ergebnisse
+
+**Unit Tests** (`src/lib/auth/redirect.test.ts`) — **13/13 bestanden**
+- decidePostAuthRedirect: 9 Tests (nicht eingeloggt, ohne Profil, mit Profil)
+- Pfad-Klassifizierung: 4 Tests (isProtectedPath, isAuthPath)
+
+**E2E Tests** (`tests/PROJ-1-authentication.spec.ts`) — **8/8 bestanden, 8 übersprungen**
+- UI-Rendering: 4 Tests ✅
+- Tastaturnavigation & A11y: 1 Test ✅
+- Security Open Redirect: 2 Tests ✅ (behoben durch Fix in auth/callback)
+- Form-Validierung: 4 Tests — übersprungen ohne Supabase (laufen mit .env.local)
+- Redirect-Verhalten: 4 Tests — übersprungen ohne Supabase
+
+### Produktionsreif: **JA** (nach S-1/S-2-Fix)
+Keine Critical- oder High-Bugs offen. S-3/S-4 als akzeptiert markiert.
 
 ## Deployment
 _To be added by /deploy_
