@@ -1,0 +1,170 @@
+import { CATEGORY_CONFIG } from "@/lib/items/categories";
+import type { BuildSummary } from "@/lib/items/build";
+import { formatWeight } from "@/lib/utils/weight";
+import { Eye, EyeOff, Pencil, Scale, Wrench } from "lucide-react";
+import Link from "next/link";
+import { EmptyState } from "./EmptyState";
+import { ItemCard } from "./ItemCard";
+
+interface BuildViewProps {
+  build: BuildSummary;
+}
+
+export function BuildView({ build }: BuildViewProps) {
+  const { bike, parts, totalWeight, partCount, hasUnknownWeight } = build;
+  const bikeConfig = CATEGORY_CONFIG[bike.category];
+  const BikeIcon = bikeConfig.icon;
+  const VisibilityIcon = bike.is_public ? Eye : EyeOff;
+
+  return (
+    <div className="space-y-5">
+      <article className="overflow-hidden rounded-lg border border-petrol-700 bg-cockpit-surface shadow-[0_0_20px_rgba(51,159,167,0.15)]">
+        {bike.image_url && (
+          <div className="relative aspect-[21/9] w-full overflow-hidden border-b border-cockpit-border">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={bike.image_url}
+              alt={`${bike.brand} ${bike.model ?? ""}`.trim()}
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-cockpit-surface/90 via-petrol-950/30 to-transparent"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-petrol-500/80"
+            />
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-start justify-between gap-4 p-5">
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden
+              className="flex h-11 w-11 items-center justify-center rounded-md border border-petrol-700 bg-petrol-950/60 text-petrol-300"
+            >
+              <BikeIcon size={22} strokeWidth={1.75} />
+            </span>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-petrol-300">
+                Build · {bikeConfig.label}
+              </p>
+              <h1 className="text-xl font-semibold tracking-tight">
+                {bike.brand}{" "}
+                <span className="text-petrol-300">{bike.model}</span>
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-cockpit-border px-2.5 py-0.5 text-[11px] text-cockpit-muted"
+              title={bike.is_public ? "Öffentlich sichtbar" : "Privat"}
+            >
+              <VisibilityIcon size={11} strokeWidth={1.75} aria-hidden />
+              {bike.is_public ? "Öffentlich" : "Privat"}
+            </span>
+            <Link
+              href={`/garage/${bike.id}/edit`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
+            >
+              <Pencil size={12} strokeWidth={1.75} aria-hidden />
+              Bearbeiten
+            </Link>
+          </div>
+        </div>
+      </article>
+
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Stat
+          icon={<Scale size={14} strokeWidth={1.75} aria-hidden />}
+          label="Gesamtgewicht"
+          value={
+            totalWeight > 0 || !hasUnknownWeight
+              ? formatWeight(totalWeight)
+              : "–"
+          }
+          hint={
+            hasUnknownWeight
+              ? "Einige Gewichte fehlen – Summe ist ein Mindestwert."
+              : undefined
+          }
+          approximate={hasUnknownWeight && totalWeight > 0}
+        />
+        <Stat
+          icon={<Wrench size={14} strokeWidth={1.75} aria-hidden />}
+          label="Verbaut"
+          value={`${partCount} ${partCount === 1 ? "Item" : "Items"}`}
+        />
+        <Stat
+          icon={<BikeIcon size={14} strokeWidth={1.75} aria-hidden />}
+          label="Bike-Gewicht"
+          value={formatWeight(bike.weight_g)}
+        />
+      </dl>
+
+      {parts.length === 0 ? (
+        <EmptyState
+          filtered
+          hint="Noch keine Komponenten verbaut. Ordne Parts diesem Bike zu, um den Build zu vervollständigen."
+        />
+      ) : (
+        <section className="space-y-3">
+          <header className="flex items-center gap-2">
+            <Wrench
+              size={14}
+              strokeWidth={1.75}
+              className="text-petrol-400"
+              aria-hidden
+            />
+            <h2 className="text-[11px] uppercase tracking-widest text-cockpit-muted">
+              Stückliste
+            </h2>
+            <span className="text-[11px] text-cockpit-muted">
+              · {partCount}
+            </span>
+          </header>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {parts.map((part) => (
+              <ItemCard key={part.id} item={part} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+  hint,
+  approximate,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint?: string;
+  approximate?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-3">
+      <div className="flex items-center gap-1.5 text-cockpit-muted">
+        {icon}
+        <dt className="text-[10px] uppercase tracking-widest">{label}</dt>
+      </div>
+      <dd className="mt-1 text-xl text-cockpit-text">
+        {approximate && (
+          <span aria-hidden className="mr-0.5 text-petrol-400">
+            ≥
+          </span>
+        )}
+        {value}
+      </dd>
+      {hint && <p className="mt-1 text-[11px] text-cockpit-muted">{hint}</p>}
+    </div>
+  );
+}

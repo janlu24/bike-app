@@ -1,8 +1,8 @@
 # PROJ-3: Item Management / Garage
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30 (Backend implementation complete)
+**Last Updated:** 2026-04-30 (Frontend implementation complete)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication)
@@ -195,6 +195,38 @@ No new packages required. All shadcn/ui components (Input, Label, Switch, Button
 ### Test Results
 - 97 unit tests passing (4 test files)
 - `npm run build` clean — no TypeScript errors
+
+## Implementation Notes (Frontend — 2026-04-30)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/types/supabase.ts` | Added `BikeOption` type export |
+| `src/lib/items/build.ts` | `computeBuild()`, `BuildSummary` — pure build aggregation logic |
+| `src/components/BottomNav.tsx` | Client bottom navigation (Dashboard, Garage, Explore, Profil) |
+| `src/components/items/WeightField.tsx` | g/kg toggle input with unit conversion on switch |
+| `src/components/items/MetadataEditor.tsx` | Dynamic key/value row editor, `name="meta_key"` arrays |
+| `src/components/items/ImageUploader.tsx` | File picker with preview, 5 MB client guard, remove flag |
+| `src/components/items/CategoryFilter.tsx` | Pill links with `?category=` query params and count badges |
+| `src/components/items/BikeSelector.tsx` | Horizontal bike pill tabs for build-mode via `?bikeId=` |
+| `src/components/items/ItemCard.tsx` | Card with image, category icon, metadata collapse toggle |
+| `src/components/items/EmptyState.tsx` | Cockpit empty state (filtered vs. fresh garage) |
+| `src/components/items/BuildView.tsx` | Build-focus view: bike header card + stats + parts list |
+| `src/components/items/ItemForm.tsx` | Shared create/edit form with `useActionState`; includes `DeleteItemForm` |
+| `src/app/garage/layout.tsx` | Authenticated shell: sticky header + BottomNav |
+| `src/app/garage/page.tsx` | Garage list — category filter, build-mode, grouped/flat views |
+| `src/app/garage/new/page.tsx` | New item page |
+| `src/app/garage/[id]/edit/page.tsx` | Edit item page with 404 guard (`.eq("user_id", user.id)`) |
+
+### Key Decisions
+- **No custom Button/Input components**: Used raw Tailwind with cockpit classes to avoid shadcn reconfiguration overhead. `FieldInput` wrapper in `ItemForm.tsx` composes an `<input>` with label and error — not a shadcn recreation.
+- **`BikeOption` added to `src/types/supabase.ts`**: Slim type for bike dropdown data, kept alongside other DB types.
+- **Garage layout**: Added as `src/app/garage/layout.tsx` (not the root layout) so login/onboarding stay unaffected.
+- **`metadata` cast**: `item.metadata` comes from Supabase as `Json` type; components cast it to `Record<string, unknown>` locally since JSONB schema guarantees object shape.
+
+### Build Verification
+- `npm run build` — clean, no TypeScript errors
+- All 97 unit tests still passing
 
 ## QA Test Results
 _To be added by /qa_

@@ -125,3 +125,4 @@ export interface Database {
 
 export type ItemRow = Database['public']['Tables']['items']['Row']
 export type ProfileRow = Database['public']['Tables']['profiles']['Row']
+export type BikeOption = { id: string; brand: string; model: string | null }
