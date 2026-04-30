@@ -1,8 +1,8 @@
 # PROJ-3: Item Management / Garage
 
-## Status: In Progress
+## Status: Architected
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30
+**Last Updated:** 2026-04-30 (Tech Design added)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication)
@@ -48,7 +48,130 @@
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+**Designed: 2026-04-30**
+
+### A) Component Structure
+
+```
+/garage (Server Page — dynamic, reads ?category and ?bikeId from searchParams)
++-- GarageHeader
+|   +-- Title "Deine Garage", item count, active filter label
+|   +-- Link: "Neues Item" → /garage/new
++-- BikeSelector (client — renders bike tabs, sets ?bikeId= via router.push)
++-- [if ?bikeId= is set and bike belongs to user]
+|   +-- BuildView (lists bike + all Parts with parent_id = bikeId)
++-- [otherwise: list mode]
+    +-- CategoryFilter (link pills → ?category=Bike/Part/Gear/Clothing, count badges)
+    +-- EmptyState (if visible item list is empty)
+    +-- GroupedByCategory (if no category filter active)
+    |   +-- CategorySection (per category)
+    |       +-- ItemCard[] (sorted: Parts with parent first)
+    +-- CategoryGrid (if category filter active)
+        +-- ItemCard[]
+
+ItemCard (client — "Mehr anzeigen" toggle for metadata overflow)
++-- Optional image with petrol overlay
++-- Category icon + brand + model
++-- Visibility badge (Eye / EyeOff)
++-- "Verbaut an: {Bike}" badge (link → /garage?bikeId=)
++-- Weight + metadata key/value pairs (first 3, expandable)
++-- Link: "Bearbeiten" → /garage/[id]/edit
+
+/garage/new (Server Page)
++-- Heading + back link to /garage
++-- ItemForm (client, create mode)
+
+/garage/[id]/edit (Server Page — fetches item; returns 404 if not found or wrong user)
++-- Heading + back link to /garage
++-- ItemForm (client, edit mode, pre-filled)
++-- DeleteItemForm (separate form — uses window.confirm before submit)
+
+ItemForm (shared client component, create + edit mode via props)
++-- CategorySelect (native <select>, with tooltip hints per category)
++-- ParentSelect (only shown when category = "Part"; lists user's Bikes)
++-- shadcn Input: brand (required, max 80 chars)
++-- shadcn Input: model (required, max 120 chars)
++-- ImageUploader (client)
+|   +-- 16:10 preview area (object-fit cover, petrol overlay)
+|   +-- "Bild auswählen / ersetzen" file input (accept JPEG/PNG/WebP/AVIF)
+|   +-- "Entfernen" button (sets hidden remove_image="on")
+|   +-- Client-side 5 MB guard (error shown before upload attempted)
++-- WeightField (client)
+|   +-- Text input (name="weight_g")
+|   +-- g/kg toggle (radiogroup, recalculates displayed value on switch)
+|   +-- Hidden input name="weight_unit" synced to active unit
++-- MetadataEditor (client)
+|   +-- Dynamic key/value row list (name="meta_key" / name="meta_value" arrays)
+|   +-- "Attribut hinzufügen" button
+|   +-- Row-level delete buttons
++-- shadcn Switch: is_public (hidden input synced, same pattern as Onboarding)
++-- Alert: general error (e.g. session expired, storage failure)
++-- Button: "Item anlegen" / "Änderungen speichern" (disabled while pending)
+```
+
+### B) Data Model
+
+No new migrations required — the `items` table and `item-images` Storage bucket are fully implemented in existing migrations (0001–0003).
+
+```
+Table: items (existing)
+- id          UUID   PK (auto-generated)
+- user_id     UUID   FK → profiles.id (ON DELETE CASCADE)
+- category    ENUM   'Bike' | 'Part' | 'Gear' | 'Clothing'
+- brand       TEXT   NOT NULL (max 80 chars)
+- model       TEXT   NULL     (max 120 chars)
+- weight_g    INT    NULL, ≥ 0 — always stored in grams
+- is_public   BOOL   DEFAULT false
+- metadata    JSONB  DEFAULT {} — key/value pairs (max 25 entries)
+- image_url   TEXT   NULL — public URL in item-images bucket
+- parent_id   UUID   NULL, FK → items.id (ON DELETE SET NULL)
+             Only used for category = 'Part'. Gear/Clothing/Bike: always NULL.
+- created_at  TIMESTAMPTZ
+- updated_at  TIMESTAMPTZ (auto-updated by trigger)
+
+Storage: item-images bucket
+- Path pattern: {userId}/{timestamp}-{random}.{ext}
+- Allowed MIME: image/jpeg, image/png, image/webp, image/avif, max 5 MB
+- Storage RLS: users can only upload/delete under their own userId prefix
+
+Security (RLS):
+- SELECT: owner OR (is_public = true AND profiles.is_public = true)
+- INSERT: user_id = auth.uid() only
+- UPDATE: user_id = auth.uid() only
+- DELETE: user_id = auth.uid() only
+```
+
+### C) API & Tech Strategy
+
+**New shared lib files** (reused across PROJ-3 and PROJ-5):
+
+| File | Purpose |
+|------|---------|
+| `src/lib/items/categories.ts` | `ITEM_CATEGORIES` array, `CATEGORY_CONFIG` (labels, icons, empty hints), `isItemCategory()` type guard |
+| `src/lib/items/validation.ts` | `parseItemInput(formData)` — validates all fields; custom parser for metadata arrays (Zod doesn't handle `formData.getAll()` natively); `CATEGORIES_WITH_PARENT` constant |
+| `src/lib/utils/weight.ts` | `parseToGrams()`, `gramsToInputValue()`, `formatWeight()` — pure functions, fully unit-testable |
+
+**Server Actions** in `src/app/garage/actions.ts`:
+
+| Action | Behaviour |
+|--------|-----------|
+| `createItemAction` | Parse+validate → optional image upload → INSERT with `user_id = session.user.id` → rollback image if DB fails → redirect /garage |
+| `updateItemAction(id)` | Parse+validate → load existing image_url → handle new/remove image → UPDATE with `.eq("user_id", user.id)` defense-in-depth → cleanup replaced image → redirect /garage |
+| `deleteItemAction` | Load image_url → DELETE with `.eq("user_id", user.id)` → cleanup Storage image → redirect /garage |
+
+**Validation strategy**: Custom `parseItemInput()` function (not plain Zod), because the metadata field requires `formData.getAll("meta_key")` array processing that Zod schemas cannot express directly. Standard fields (brand, model, weight) are validated with explicit checks that match Zod-equivalent rules.
+
+**Category filter strategy**: URL-based query params (`?category=Bike`). The Server Page reads `searchParams`, filters server-side, and passes counts to `CategoryFilter`. No client state — filter changes are full navigations, cached by Next.js router. This avoids hydration overhead for a read-mostly list.
+
+**Image rollback**: If `storage.upload()` succeeds but `items.insert()` fails, the action calls `storage.remove([path])` to prevent orphaned files in the bucket. The cleanup is best-effort (not transactional) — a failed cleanup leaves an orphaned file but does not expose any data.
+
+**Edit page 404 guard**: The edit page fetches the item with `.eq("id", id).eq("user_id", session.user.id).maybeSingle()`. If the result is `null` (not found, or wrong owner), the page calls Next.js `notFound()`. This means a user can never edit items they don't own — even if they guess a valid UUID.
+
+**Weight**: Always stored as integer grams. The client-side toggle converts the displayed value on unit switch (e.g. "7.45 kg" ↔ "7450 g"). The hidden `weight_unit` field tells the Server Action how to interpret the numeric input before converting to grams.
+
+### D) Dependencies
+
+No new packages required. All shadcn/ui components (Input, Label, Switch, Button, Select) and Lucide icons (Bike, Cog, Backpack, Shirt, ImagePlus, Trash2, Plus, Save, etc.) are already installed.
 
 ## QA Test Results
 _To be added by /qa_
