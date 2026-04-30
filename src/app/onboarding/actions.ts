@@ -20,7 +20,7 @@ export async function createProfileAction(
     const fieldErrors: OnboardingFormState["fieldErrors"] = {};
     for (const issue of parsed.error.issues) {
       const field = issue.path[0] as keyof typeof fieldErrors;
-      if (field === "username" || field === "full_name") {
+      if ((field === "username" || field === "full_name") && !fieldErrors[field]) {
         fieldErrors[field] = issue.message;
       }
     }

@@ -1,8 +1,8 @@
 # PROJ-2: Onboarding & Profil-Setup
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30 (Frontend implemented)
+**Last Updated:** 2026-04-30 (QA passed)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication) — Nutzer muss eingeloggt sein
@@ -124,7 +124,49 @@ Security (RLS):
 - **Build:** TypeScript-Build fehlerfrei
 
 ## QA Test Results
-_To be added by /qa_
+**QA durchgeführt am 2026-04-30**
+
+### Acceptance Criteria
+
+| AC | Status | Anmerkung |
+|----|--------|-----------|
+| Redirect zu /onboarding wenn kein Profil vorhanden | ✅ Implementiert | Via proxy.ts — bereits in PROJ-1 getestet |
+| /onboarding zeigt Formular für Username (+ optionaler Name) | ✅ Implementiert | E2E-Tests bestanden |
+| Username-Validierung: 3–32 Zeichen, eindeutig | ✅ Implementiert | Zod-Schema + DB UNIQUE-Constraint |
+| Erfolgreicher Submit → INSERT in `profiles` mit `id = auth.uid()` | ✅ Implementiert | Erfordert Supabase-Instanz zum vollständigen Test |
+| Nach erfolgreichem Onboarding → Redirect zu / | ✅ Implementiert | `revalidatePath + redirect("/")` |
+| UI-Hinweis "dauerhaft eindeutig" sichtbar | ✅ Implementiert | Im Label + Footer-Text; E2E-Test bestanden |
+| Zod-validierte Server Action | ✅ Implementiert | `createProfileSchema.safeParse()` vor DB-Call |
+
+### Security Audit
+
+| ID | Severity | Beschreibung | Status |
+|----|----------|-------------|--------|
+| S-1 | **High** | `profiles.id` könnte vom Client manipuliert werden | ✅ **Sicher** — `id: user.id` kommt immer vom Auth-Server; RLS `profiles_insert_self` (WITH CHECK auth.uid() = id) als 2. Schutzschicht |
+| S-2 | Medium | XSS im Username-Feld | ✅ **Sicher** — Zod-Regex erlaubt nur `[a-zA-Z0-9_-]`; E2E-Test bestanden |
+| S-3 | Medium | SQL-Injection im Username | ✅ **Sicher** — Supabase-Client verwendet parametrisierte Queries; Zod-Regex zusätzlich |
+| S-4 | Medium | Zod-Fehler zeigte regex-Message statt min-Message bei leerem Feld | ✅ **Behoben** — "First error wins" Logik in `createProfileAction` |
+| S-5 | Low | `maxLength={80}` im Input-Element — Umgehung via manuellen POST möglich | ✅ **Sicher** — Server-seitige Zod-Validierung greift unabhängig vom Client; E2E-Test mit `evaluate()` bestätigt |
+
+Kein Critical-Bug. Kein PII in Logs. Keine hardcoded Secrets.
+
+### Test-Ergebnisse
+
+**Unit Tests** (`src/app/onboarding/schema.test.ts`) — **16/16 bestanden** (29/29 gesamt)
+- username: 10 Tests (min, max, erlaubte/verbotene Zeichen)
+- full_name: 4 Tests (optional, max 80)
+- is_public: 2 Tests (default false, true)
+
+**E2E Tests** (`tests/PROJ-2-onboarding.spec.ts`) — **22/22 bestanden, 2 übersprungen**
+- UI-Rendering: 9 Tests ✅ (Logo, Felder, Switch, Submit-Button, keine doppelten IDs)
+- A11y / Tastatur: 3 Tests ✅ (Tab-Navigation, aria-describedby, Label-Klick)
+- Zod-Validierung: 8 Tests ✅ (leer, zu kurz, Sonderzeichen, Führendes Sonderzeichen, Name zu lang)
+- Security Injection: 2 Tests ✅ (XSS, SQL-Injection durch Regex blockiert)
+- Redirect (benötigt Supabase): 1 Test — übersprungen
+- Profilanlage (benötigt Supabase): 1 Test — übersprungen
+
+### Produktionsreif: **JA**
+Keine Critical- oder High-Bugs offen. S-4 behoben. S-5 als sicher bestätigt.
 
 ## Deployment
 _To be added by /deploy_
