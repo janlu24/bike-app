@@ -1,8 +1,8 @@
 # PROJ-3: Item Management / Garage
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30 (Tech Design added)
+**Last Updated:** 2026-04-30 (Backend implementation complete)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication)
@@ -172,6 +172,29 @@ Security (RLS):
 ### D) Dependencies
 
 No new packages required. All shadcn/ui components (Input, Label, Switch, Button, Select) and Lucide icons (Bike, Cog, Backpack, Shirt, ImagePlus, Trash2, Plus, Save, etc.) are already installed.
+
+## Implementation Notes (Backend — 2026-04-30)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/lib/utils/weight.ts` | `formatWeight()`, `parseToGrams()`, `gramsToInputValue()` — pure weight utility functions |
+| `src/lib/utils/weight.test.ts` | 20 unit tests (formatWeight, parseToGrams g/kg, gramsToInputValue) |
+| `src/lib/items/categories.ts` | `ITEM_CATEGORIES`, `CATEGORY_CONFIG`, `isItemCategory()` type guard |
+| `src/lib/items/validation.ts` | `parseItemInput()`, `parseMetadata()`, `CATEGORIES_WITH_PARENT`, `ItemInput`, `ItemValidationResult` types |
+| `src/lib/items/validation.test.ts` | 77 unit tests (parseMetadata 11, parseItemInput 66) |
+| `src/app/garage/schema.ts` | `ItemFormState` type |
+| `src/app/garage/actions.ts` | `createItemAction`, `updateItemAction`, `deleteItemAction` Server Actions with image upload/rollback |
+
+### Implementation Decisions
+- **`Record<string, unknown>` removed from updatePayload**: TypeScript build failed because Supabase's typed `.update()` rejects untyped record. Fixed by building base payload with correct types and conditionally spreading `image_url` with a ternary.
+- **Custom validation (not Zod)**: Metadata requires `formData.getAll()` array processing; Zod schemas can't express this natively. `parseItemInput` implements equivalent rules explicitly.
+- **Image rollback**: Storage upload success + DB failure → `storage.remove([path])` called as cleanup. Best-effort, not transactional.
+- **Edit page defense-in-depth**: `.update().eq("id", id).eq("user_id", user.id)` — second `.eq` ensures users can never accidentally update items belonging to others, even if the 404 guard somehow fails.
+
+### Test Results
+- 97 unit tests passing (4 test files)
+- `npm run build` clean — no TypeScript errors
 
 ## QA Test Results
 _To be added by /qa_
