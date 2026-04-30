@@ -4,6 +4,34 @@
 **Created:** 2026-04-30
 **Last Updated:** 2026-04-30
 
+## Implementation Notes
+**Backend implementiert am 2026-04-30**
+
+### Erstellt
+- `supabase/migrations/0001_init.sql` — profiles + items Tabellen, RLS-Policies, Trigger
+- `supabase/migrations/0002_item_images.sql` — image_url Spalte + Storage-Bucket mit Policies
+- `supabase/migrations/0003_item_parent_relation.sql` — parent_id Self-Reference + brand NOT NULL
+- `supabase/migrations/0004_weight_unit.sql` — profiles.weight_unit Präferenz
+- `src/types/supabase.ts` — handgeschriebene DB-Types (Database, ItemRow, ProfileRow, ItemCategory)
+- `src/lib/supabase/client.ts` — Browser-Client (createSupabaseBrowserClient)
+- `src/lib/supabase/server.ts` — Server-Client async (createSupabaseServerClient)
+- `src/lib/supabase/middleware.ts` — Middleware-Client (createMiddlewareClient)
+- `src/lib/auth/redirect.ts` — Reine Redirect-Logik (decidePostAuthRedirect, isProtectedPath, isAuthPath)
+- `src/proxy.ts` — Globaler Proxy (Next.js 16 Konvention; ersetzt middleware.ts)
+- `src/app/auth/callback/route.ts` — Code-Exchange Route Handler (GET)
+- `src/app/auth/signout/route.ts` — Sign-out Route Handler (POST, 303 Redirect)
+- `src/app/login/schema.ts` — AuthFormState Interface
+- `src/app/login/actions.ts` — signInAction + signUpAction Server Actions
+
+### Besonderheiten / Abweichungen
+- **Next.js 16:** Middleware-Konvention geändert: `middleware.ts` → `proxy.ts`, Export `middleware` → `proxy`
+- **@supabase/ssr** neu installiert (fehlte im Starter-Template)
+- **tsconfig.json:** `src/alt_bike software` explizit ausgeschlossen (verhindert TS-Fehler aus Legacy-Code)
+- **Types-Pfad:** `src/types/supabase.ts` (gem. Backend-Regeln), nicht `src/lib/supabase/types.ts` wie im Altprojekt
+
+### Noch offen (Frontend, PROJ-1)
+- Login-Page UI (`src/app/login/page.tsx`, `LoginForm.tsx`) — folgt mit `/frontend`
+
 ## Dependencies
 - None
 
