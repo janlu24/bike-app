@@ -45,6 +45,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       items: {
         Row: {
@@ -89,6 +90,22 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -99,6 +116,9 @@ export interface Database {
     }
     Enums: {
       item_category: ItemCategory
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

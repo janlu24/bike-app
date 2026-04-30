@@ -11,6 +11,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/alt_bike software/**',
+      'tests/**',
     ],
   },
   resolve: {

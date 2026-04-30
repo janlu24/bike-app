@@ -1,8 +1,8 @@
 # PROJ-2: Onboarding & Profil-Setup
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30 (Tech Design added)
+**Last Updated:** 2026-04-30 (Backend implemented)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication) — Nutzer muss eingeloggt sein
@@ -103,6 +103,23 @@ Security (RLS):
 | Username uniqueness | PostgreSQL UNIQUE constraint + error code 23505 mapped to German UI message |
 | Session required | Server Action returns error if `getUser()` returns null; no client token storage |
 | Username character allowlist | Zod regex before DB write — prevents special characters / injection attempts |
+
+## Implementation Notes
+**Backend implementiert am 2026-04-30**
+
+### Kein neues Migration — Tabelle bereits in PROJ-1 erstellt
+- `profiles` table + RLS policies (`profiles_insert_self`, etc.) bereits in `supabase/migrations/0001_init.sql`
+
+### Erstellt
+- `src/app/onboarding/schema.ts` — `createProfileSchema` (Zod), `OnboardingFormState` Interface
+- `src/app/onboarding/actions.ts` — `createProfileAction` Server Action (Zod-Validierung, Auth-Check, 23505-Handling, redirect)
+- `src/app/onboarding/schema.test.ts` — 16 Unit-Tests für Schema-Validierung (alle bestanden)
+
+### Besonderheiten / Abweichungen
+- `src/types/supabase.ts` erweitert: `Relationships` + `CompositeTypes` für `@supabase/supabase-js` 2.39 PostgREST-12-Kompatibilität (fehlten in handgeschriebenen Typen)
+- `vitest.config.ts`: `tests/**` zum `exclude`-Array hinzugefügt (Playwright-Specs wurden fälschlicherweise von Vitest aufgegriffen)
+- **Unit Tests:** 29/29 bestanden (inkl. 16 neue Onboarding-Schema-Tests)
+- **Build:** TypeScript-Build fehlerfrei
 
 ## QA Test Results
 _To be added by /qa_
