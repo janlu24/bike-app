@@ -59,6 +59,7 @@ export interface Database {
           metadata: Json
           image_url: string | null
           parent_id: string | null
+          template_id: string | null
           created_at: string
           updated_at: string
         }
@@ -73,6 +74,7 @@ export interface Database {
           metadata?: Json
           image_url?: string | null
           parent_id?: string | null
+          template_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -87,6 +89,7 @@ export interface Database {
           metadata?: Json
           image_url?: string | null
           parent_id?: string | null
+          template_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -103,6 +106,51 @@ export interface Database {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "item_templates"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      item_templates: {
+        Row: {
+          id: string
+          user_id: string
+          category: ItemCategory
+          name: string
+          property_keys: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          category: ItemCategory
+          name: string
+          property_keys: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          category?: ItemCategory
+          name?: string
+          property_keys?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           }
         ]
@@ -125,4 +173,5 @@ export interface Database {
 
 export type ItemRow = Database['public']['Tables']['items']['Row']
 export type ProfileRow = Database['public']['Tables']['profiles']['Row']
+export type TemplateRow = Database['public']['Tables']['item_templates']['Row']
 export type BikeOption = { id: string; brand: string; model: string | null }

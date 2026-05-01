@@ -1,6 +1,6 @@
 # PROJ-8: Item Templates & Comparison
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-05-01
 **Last Updated:** 2026-05-01
 
@@ -275,9 +275,33 @@ No new npm packages required. All needed shadcn/ui components are already instal
 | shadcn Select | ✅ | TemplateSelector in ItemForm |
 | shadcn Radio Group | ✅ | delete/keep decision per removed key |
 
-## Implementation Notes
-<!-- REQUIRED BY GENERAL RULES: Document what was built and any deviations from this spec -->
-- 
+## Implementation Notes (Backend — 2026-05-01)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/0005_item_templates.sql` | Creates `item_templates` table with RLS (owner-only), unique constraint on (user_id, category, name), adds `template_id` nullable FK to `items` with ON DELETE SET NULL |
+| `src/lib/templates/validation.ts` | `parseTemplateInput()`, `parsePropagationDecisions()`, `computeTemplateDiff()`, `isValidTemplateId()` — pure validation functions |
+| `src/lib/templates/validation.test.ts` | 52 unit tests covering all validation edge cases |
+| `src/app/(app)/garage/templates/schema.ts` | `TemplateFormState` type |
+| `src/app/(app)/garage/templates/actions.ts` | `createTemplateAction`, `updateTemplateAction`, `deleteTemplateAction` Server Actions |
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/types/supabase.ts` | Added `item_templates` Row/Insert/Update types, `template_id` to `items`, `TemplateRow` export |
+| `src/app/(app)/garage/actions.ts` | `createItemAction` now reads `template_id` from FormData, validates UUID format, verifies ownership against DB, then includes it in the INSERT |
+
+### Implementation Decisions
+- **Propagation via Promise.all (not single SQL):** The architecture spec called for a single DB UPDATE. Given Supabase's JS client cannot express JSONB merge/delete operators natively, this is implemented as parallel `Promise.all` over linked items instead. For the side-project scale (5–50 items per template), this is acceptable. A PostgreSQL stored procedure would add complexity without meaningful benefit.
+- **Server-side diff:** `updateTemplateAction` reloads `property_keys` from the DB before computing the diff — the client-side diff in `PropagationModal` is only for UX. Server does not trust the client's diff.
+- **Duplicate template name:** Handled by catching Postgres error code `23505` (unique violation) and returning a field error, not a generic error.
+- **template_id on item edit:** Not supported in MVP. `updateItemAction` does not touch `template_id` — a linked item stays linked regardless of edits.
+- **`isValidTemplateId` re-used** from `src/lib/templates/validation.ts` in both the template actions and `createItemAction`.
+
+### Test Results
+- 149 unit tests passing (8 test files — 52 new template validation tests)
+- `npm run build` clean — no TypeScript errors
 
 ## QA Test Results
 _To be added by /qa_
