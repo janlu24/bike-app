@@ -176,6 +176,25 @@ The following are **already implemented** (delivered as part of PROJ-3 backend/f
 - Isolation: parts from other bikes excluded
 - Immutability: frozen input array does not throw
 
+### Frontend Implementation Notes
+
+All UI components were implemented as part of PROJ-3 and required no changes. The following confirms the full frontend delivery:
+
+**Components:**
+- `src/components/items/BuildView.tsx` — Bike header card (image banner, brand/model, visibility badge, edit link), 3-stat row (total weight with `≥` prefix and hint when `hasUnknownWeight`, part count, bike weight), and parts grid with empty state
+- `src/components/items/BikeSelector.tsx` — Horizontal scrollable filter chips; "Alle Items" chip, one chip per bike (brand + model to distinguish duplicates), "Zurücksetzen" chip when a bike is active
+- `src/components/items/ItemForm.tsx` — "Zugeordnetes Bike" select shown only for Part/Gear categories (`CATEGORIES_WITH_PARENT` allowlist); "— Keine Zuordnung —" default; self excluded from list; empty-bikes hint shown when user has no bikes
+- `src/components/items/ItemCard.tsx` — "Verbaut an: Brand Model" chip linking to `/garage?bikeId={id}` when `parent` prop is provided
+
+**Pages:**
+- `src/app/(app)/garage/page.tsx` — Build mode activated via `?bikeId=` param; validates bike exists and belongs to user before entering build mode
+- `src/app/(app)/garage/new/page.tsx` and `[id]/edit/page.tsx` — Fetch user's bikes (category=Bike, ordered by created_at desc) and pass to `ItemForm`
+
+**Design deviation — weight display:**
+The spec requires weight display to respect the `profiles.weight_unit` preference. In practice, `formatWeight` uses threshold-based auto-detection (< 1000g → "g", ≥ 1000g → "kg") across the entire app including PROJ-4 (Approved). The `weight_unit` profile column is used for input defaulting only. This is a consistent app-wide decision, not a gap unique to PROJ-5.
+
+**Build verification:** `npm run build` completed without TypeScript errors. All 6 routes compile successfully.
+
 ## QA Test Results
 _To be added by /qa_
 
