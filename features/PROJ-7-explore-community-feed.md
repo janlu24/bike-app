@@ -1,8 +1,8 @@
 # PROJ-7: Explore / Community Feed
 
-## Status: Planned
+## Status: In Progress
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30
+**Last Updated:** 2026-05-01
 
 ## Dependencies
 - Requires: PROJ-3 (Item Management) — public items data
@@ -42,7 +42,128 @@
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Status: Architected
+**Architected:** 2026-05-01
+
+---
+
+### A) Component Structure
+
+```
+/explore (Server Component — ISR, revalidate: 60s)
+├── ExplorePageHeader            static H1 + subtitle
+├── CategoryFilter               REUSE src/components/items/CategoryFilter.tsx
+│                                (basePath="/explore", reads searchParams.category)
+└── ExploreFeed                  Client Component — owns pagination state
+    ├── ExploreItemCard[]        new component, one per public item
+    │   ├── Item image (optional, 16:10 aspect)
+    │   ├── Category icon + label
+    │   ├── Brand + Model
+    │   └── Owner chip → links to /profile/[username]
+    ├── LoadMoreButton           calls Server Action for next batch; hidden when exhausted
+    └── ExploreEmptyState        shown when 0 results; CTA to register
+```
+
+**New files:**
+- `src/app/explore/page.tsx` — the ISR page
+- `src/components/explore/ExploreFeed.tsx` — Client Component, pagination state
+- `src/components/explore/ExploreItemCard.tsx` — public item card with owner chip
+- `src/lib/explore/actions.ts` — Server Action `fetchExploreFeed(page, category?)`
+
+**Reused files (no changes):**
+- `src/components/items/CategoryFilter.tsx` — already accepts `basePath` prop
+
+---
+
+### B) Data Model
+
+No new database tables or migrations are needed. The existing schema fully covers the requirements:
+
+**Used tables:**
+- `items` — `id`, `category`, `brand`, `model`, `image_url`, `weight_g`, `is_public`, `user_id`
+- `profiles` — `id`, `username`, `avatar_url`, `is_public`
+
+**Indexes already in place:**
+- `items_is_public_idx` on `items(is_public)`
+- `profiles_is_public_idx` on `profiles(is_public)`
+- `items_category_idx` on `items(category)` — used for category filter
+
+**Query shape (JOIN, no N+1):**
+The feed query SELECTs from `items` with an inner join to `profiles`, filtering both `items.is_public = true` and `profiles.is_public = true`. Supabase's embedded relation syntax produces a single SQL JOIN — no N+1 loop.
+
+**Result type per feed item:**
+```
+ExploreItem = {
+  id: string
+  category: 'Bike' | 'Part' | 'Gear' | 'Clothing'
+  brand: string | null
+  model: string | null
+  image_url: string | null
+  weight_g: number | null
+  owner: { username: string; avatar_url: string | null }
+}
+```
+Derived from generated Supabase types — no `any`, no extra type files.
+
+**Security (RLS):**
+The existing `items_select_public_or_owner` policy already enforces that only items where `items.is_public = true AND profiles.is_public = true` are visible to unauthenticated (anon) requests. No RLS changes are required.
+
+---
+
+### C) API & Tech Strategy
+
+**Data fetching — hybrid Server/Client approach:**
+
+1. **Initial load (Server):** `page.tsx` reads `searchParams.category` and fetches the first batch of 24 items server-side using the Supabase server client (anon key, no auth). The page is ISR-cached with `revalidate = 60` — each unique `?category=` URL variant is cached independently by Next.js.
+
+2. **Pagination (Client):** `ExploreFeed` is a Client Component that receives the initial items as a prop. When the user clicks "Mehr laden", it calls the Server Action `fetchExploreFeed(page, category)` which fetches the next batch of 24. The Client Component appends results to its local state — no full page reload.
+
+3. **Server Action** (`src/lib/explore/actions.ts`): Uses the Supabase server client with the anon key (no session required). Accepts `page: number` (offset = page × 24) and optional `category: ItemCategory`. Selects only the required columns. Returns `ExploreItem[]`.
+
+**Caching:**
+- Page-level ISR (`revalidate = 60`) covers the first page of each category — the most common landing pattern
+- Subsequent "load more" calls hit Supabase directly; no extra caching layer needed at MVP
+
+**Unauthenticated access:**
+- The page is a public route — no middleware auth check
+- The Supabase client uses the anon key; RLS handles data scoping automatically
+- Clicking a profile link (`/profile/[username]`) works for visitors; subsequent protected navigation (e.g. `/garage`) is handled by existing middleware redirect to `/login`
+
+**No new npm packages required.**
+
+---
+
+### D) Dependencies
+
+No new packages. All required tools are already installed:
+- Supabase JS client (data fetching)
+- Next.js Server Actions (pagination)
+- Tailwind CSS + shadcn/ui (styling)
+- Lucide React (category icons)
+
+## Implementation Notes (Backend)
+
+**Implemented:** 2026-05-01
+
+### What was built
+- `src/lib/explore/actions.ts` — Server Action `fetchExploreFeed(page, category?)`
+  - Uses Supabase server client (anon key, no auth required)
+  - Single JOIN query: `items` inner-joined with `profiles` via `items_user_id_fkey`
+  - `.eq("is_public", true)` + inner join ensures only fully public items from public profiles appear
+  - RLS double-enforces visibility at DB level (anon key; private profiles invisible via inner join)
+  - Pagination via `.range(from, to)` with `EXPLORE_PAGE_SIZE = 24`
+  - Optional `category` filter maps to `.eq("category", category)`
+  - Exports `ExploreItem` type and `mapRawRowToExploreItem` (testable pure function)
+- `src/lib/explore/actions.test.ts` — 9 unit tests (all passing)
+  - Tests for `mapRawRowToExploreItem` (single vs array profiles, null handling, field preservation)
+  - Tests for pagination offset arithmetic
+
+### No migrations needed
+All required tables (`items`, `profiles`), indexes (`items_is_public_idx`, `profiles_is_public_idx`, `items_category_idx`), and RLS policies were already in place from PROJ-1 and PROJ-3.
+
+### Deviations from architecture
+None — implementation matches the tech design exactly.
 
 ## QA Test Results
 _To be added by /qa_
