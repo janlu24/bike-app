@@ -3,7 +3,7 @@ import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { aggregateCounts } from "@/lib/items/aggregate";
 import { ITEM_CATEGORIES } from "@/lib/items/categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { probeSupabase } from "@/lib/system/status";
+import { probeSupabase, type SupabaseStatus } from "@/lib/system/status";
 import type { ItemCategory } from "@/types/supabase";
 import { Plus, Shield } from "lucide-react";
 import type { Metadata } from "next";
@@ -16,40 +16,46 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const supabase = await createSupabaseServerClient();
+  const isConfigured = !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 
-  const [supabaseStatus, { data: authData }] = await Promise.all([
-    probeSupabase(),
-    supabase.auth.getUser(),
-  ]);
-
-  const user = authData?.user ?? null;
-
-  let profile: { username: string | null } | null = null;
+  let supabaseStatus: SupabaseStatus = "not_configured";
+  let authLabel = "anonym";
+  let authStatus: "ok" | "warn" | "muted" = "muted";
   let items: { category: ItemCategory }[] = [];
 
-  if (user) {
-    const [profileResult, itemsResult] = await Promise.all([
-      supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
-      supabase.from("items").select("category").eq("user_id", user.id),
+  if (isConfigured) {
+    const supabase = await createSupabaseServerClient();
+
+    const [probeResult, { data: authData }] = await Promise.all([
+      probeSupabase(),
+      supabase.auth.getUser(),
     ]);
-    profile = profileResult.data ?? null;
-    items = (itemsResult.data ?? []) as { category: ItemCategory }[];
+
+    supabaseStatus = probeResult;
+    const user = authData?.user ?? null;
+
+    if (user) {
+      const [profileResult, itemsResult] = await Promise.all([
+        supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
+        supabase.from("items").select("category").eq("user_id", user.id),
+      ]);
+      const profile = profileResult.data ?? null;
+      items = (itemsResult.data ?? []) as { category: ItemCategory }[];
+
+      if (profile?.username) {
+        authStatus = "ok";
+        authLabel = `@${profile.username}`;
+      } else {
+        authStatus = "warn";
+        authLabel = "ohne Profil";
+      }
+    }
   }
 
   const counts = aggregateCounts(items);
-
-  let authStatus: "ok" | "warn" | "muted" = "muted";
-  let authLabel = "anonym";
-  if (user) {
-    if (profile?.username) {
-      authStatus = "ok";
-      authLabel = `@${profile.username}`;
-    } else {
-      authStatus = "warn";
-      authLabel = "ohne Profil";
-    }
-  }
 
   return (
     <div className="space-y-6">
