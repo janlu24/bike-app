@@ -15,7 +15,7 @@
 - As a user, I want to remove a bike without losing the linked parts so that my individual items stay intact
 
 ## Acceptance Criteria
-- [ ] When creating or editing a Part or Gear item, user can select a parent Bike via a BikeSelector dropdown
+- [ ] When creating or editing a Part item, user can select a parent Bike via a BikeSelector dropdown
 - [ ] BikeSelector only shows items of category "Bike" owned by the current user
 - [ ] Build summary shows: bike details, list of all linked parts, total weight (in g or kg per profile preference)
 - [ ] Items without `weight_g` contribute 0 to the total; a "Gewicht unvollständig" indicator is shown
@@ -206,7 +206,7 @@ The spec requires weight display to respect the `profiles.weight_unit` preferenc
 
 | # | AC | Result | Notes |
 |---|---|--------|-------|
-| AC1 | Part item can select parent Bike via dropdown | ✅ PASS | Part shows selector; Gear excluded by design (see BUG-01) |
+| AC1 | Part item can select parent Bike via dropdown | ✅ PASS | Part shows selector; Gear intentionally excluded (Gear is not permanently mounted) |
 | AC2 | BikeSelector only shows "Bike" category items owned by user | ✅ PASS | GaragePage filters by `category = "Bike"` + `user_id`; RLS enforces ownership |
 | AC3 | Build summary shows bike details, linked parts, total weight | ✅ PASS | BuildView: bike header, 3-stat row, parts grid |
 | AC4 | Items without `weight_g` → `hasUnknownWeight`, "Einige Gewichte fehlen" indicator | ✅ PASS | BuildView shows hint; 8 unit tests cover all weight edge cases |
@@ -249,9 +249,7 @@ The spec requires weight display to respect the `profiles.weight_unit` preferenc
 
 | ID | Severity | Description | Steps | Status |
 |----|----------|-------------|-------|--------|
-| BUG-01 | **Medium** | Gear category does NOT show parent bike selector, contrary to AC1 | 1. Go to /garage/new. 2. Select "Gear" category. 3. No "Zugeordnetes Bike" dropdown appears. | Accepted deviation |
-
-**BUG-01 Analysis:** The spec states AC1 should apply to "Part or Gear" items. The implementation (`CATEGORIES_WITH_PARENT = ["Part"]`) excludes Gear intentionally: the code comment states "Only Parts are permanently attached to a bike." The UX distinction is: Parts are physically mounted (fest verbaut), Gear is carried on tours (flexibel). This is a valid design decision. Recommendation: update the spec's AC1 to reflect "Part" only, or make a product decision to include Gear.
+_No bugs._
 
 ---
 
