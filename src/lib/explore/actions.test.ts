@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapRawRowToExploreItem, EXPLORE_PAGE_SIZE } from "./actions";
+import { mapRawRowToExploreItem, EXPLORE_PAGE_SIZE } from "./types";
 
 const BASE_ROW = {
   id: "abc-123",

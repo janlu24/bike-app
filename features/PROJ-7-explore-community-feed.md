@@ -1,6 +1,6 @@
 # PROJ-7: Explore / Community Feed
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
 **Last Updated:** 2026-05-01
 
@@ -163,7 +163,25 @@ No new packages. All required tools are already installed:
 All required tables (`items`, `profiles`), indexes (`items_is_public_idx`, `profiles_is_public_idx`, `items_category_idx`), and RLS policies were already in place from PROJ-1 and PROJ-3.
 
 ### Deviations from architecture
-None — implementation matches the tech design exactly.
+`"use server"` files forbid non-async exports, so types and pure functions were extracted to `src/lib/explore/types.ts`. The `actions.ts` file now only exports the async `fetchExploreFeed` function. This is a structural refinement — the public API is unchanged.
+
+## Implementation Notes (Frontend)
+
+**Implemented:** 2026-05-01
+
+### What was built
+- `src/lib/explore/types.ts` — `ExploreItem` type, `EXPLORE_PAGE_SIZE = 24`, `mapRawRowToExploreItem` (needed to split from `actions.ts` due to `"use server"` constraint)
+- `src/components/explore/ExploreItemCard.tsx` — public card with image, category icon, brand/model, weight, and owner avatar chip linking to `/profile/[username]`
+- `src/components/explore/ExploreFeed.tsx` — Client Component managing paginated state; calls `fetchExploreFeed` Server Action on "Mehr laden"; shows 3 skeleton cards during load; `ExploreEmptyState` with register CTA when no items
+- `src/app/(app)/explore/page.tsx` — Server Component; reads `searchParams.category`, validates with `isItemCategory`, fetches initial batch; passes `key={category ?? "all"}` to `ExploreFeed` to force re-mount on filter change
+
+### Reused components
+- `src/components/items/CategoryFilter.tsx` — used with `basePath="/explore"` and no changes
+
+### Notes
+- `ExploreEmptyState` shows a "Registrieren & Setup teilen" CTA linking to `/login` when the full feed is empty (not filtered)
+- Category-filtered empty state shows a plain message without a CTA (per spec edge case)
+- `formatWeight` is called directly without WeightUnitContext — it auto-formats based on magnitude (under 1000g → g, over → kg), which is appropriate for the public feed
 
 ## QA Test Results
 _To be added by /qa_
