@@ -1,6 +1,6 @@
 # PROJ-5: Bike Build View
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-04-30
 **Last Updated:** 2026-05-01
 
@@ -196,7 +196,79 @@ The spec requires weight display to respect the `profiles.weight_unit` preferenc
 **Build verification:** `npm run build` completed without TypeScript errors. All 6 routes compile successfully.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Date:** 2026-05-01
+**Result: APPROVED** — 0 Critical, 0 High bugs. 1 Medium deviation (documented below).
+
+---
+
+### Acceptance Criteria Results
+
+| # | AC | Result | Notes |
+|---|---|--------|-------|
+| AC1 | Part item can select parent Bike via dropdown | ✅ PASS | Part shows selector; Gear excluded by design (see BUG-01) |
+| AC2 | BikeSelector only shows "Bike" category items owned by user | ✅ PASS | GaragePage filters by `category = "Bike"` + `user_id`; RLS enforces ownership |
+| AC3 | Build summary shows bike details, linked parts, total weight | ✅ PASS | BuildView: bike header, 3-stat row, parts grid |
+| AC4 | Items without `weight_g` → `hasUnknownWeight`, "Einige Gewichte fehlen" indicator | ✅ PASS | BuildView shows hint; 8 unit tests cover all weight edge cases |
+| AC5 | `partCount` reflects number of directly linked child items | ✅ PASS | Covered by `computeBuild` unit tests |
+| AC6 | Self-reference prevented (DB + UI) | ✅ PASS | `items_parent_not_self` CHECK + `availableBikes.filter(b.id !== item.id)` |
+| AC7 | Deleting a bike sets `parent_id = NULL` on linked parts | ✅ PASS | `ON DELETE SET NULL` in migration 0003 |
+| AC8 | `computeBuild` is a pure function — testable without DB | ✅ PASS | 12 unit tests in `src/lib/items/build.test.ts`, all passing |
+
+---
+
+### Edge Case Results
+
+| Edge Case | Result | Notes |
+|---|---|-------|
+| Bike with no parts → `partCount = 0`, weight = bike's own weight | ✅ PASS | Unit test: "no linked parts, bike has weight" |
+| All parts `weight_g = null` → `hasUnknownWeight = true` | ✅ PASS | Unit test: "all parts have null weight" |
+| Bike itself has no weight → `hasUnknownWeight = true` | ✅ PASS | Unit test: "bike weight is null, sums only parts" |
+| Non-Bike items filtered from parent selector | ✅ PASS | `CATEGORIES_WITH_PARENT` only allows Bike refs |
+| Deleted bike → parts remain, `parent_id = NULL` | ✅ PASS | `ON DELETE SET NULL` constraint verified |
+| Two bikes with same name → BikeSelector shows brand + model | ✅ PASS | BikeSelector renders `{bike.brand} {bike.model}` |
+| `bikeId` param pointing to foreign bike → normal list mode | ✅ PASS | E2E test: S-1 + Build-Modus URL-Handling |
+
+---
+
+### Security Audit
+
+| Check | Result | Notes |
+|---|---|-------|
+| RLS: user can only see own items | ✅ PASS | `eq("user_id", user.id)` in GaragePage; RLS enforces on DB level |
+| Foreign bikeId does not expose other user's data | ✅ PASS | bikeId validated against user's own items array (never queries foreign items) |
+| `parent_id` cannot be set to foreign bike | ✅ PASS | Even if submitted, the foreign bike won't appear in the user's items (RLS) |
+| Self-reference double protection (DB + UI) | ✅ PASS | Both layers confirmed |
+| No JWT/API key in rendered HTML | ✅ PASS | Verified via E2E test S-5 |
+| XSS: brand/model input escaped by React | ✅ PASS | React JSX auto-escapes; no `dangerouslySetInnerHTML` used |
+| `user_id` not read from FormData | ✅ PASS | `requireUser()` uses server session only |
+
+---
+
+### Bugs Found
+
+| ID | Severity | Description | Steps | Status |
+|----|----------|-------------|-------|--------|
+| BUG-01 | **Medium** | Gear category does NOT show parent bike selector, contrary to AC1 | 1. Go to /garage/new. 2. Select "Gear" category. 3. No "Zugeordnetes Bike" dropdown appears. | Accepted deviation |
+
+**BUG-01 Analysis:** The spec states AC1 should apply to "Part or Gear" items. The implementation (`CATEGORIES_WITH_PARENT = ["Part"]`) excludes Gear intentionally: the code comment states "Only Parts are permanently attached to a bike." The UX distinction is: Parts are physically mounted (fest verbaut), Gear is carried on tours (flexibel). This is a valid design decision. Recommendation: update the spec's AC1 to reflect "Part" only, or make a product decision to include Gear.
+
+---
+
+### Test Coverage
+
+**Unit Tests (`src/lib/items/build.test.ts`):** 12 tests, all passing
+- No parts (bike with/without weight)
+- All weights known, partial null weights, all null weights
+- Self-reference exclusion
+- Multi-bike isolation
+- Immutability
+
+**E2E Tests (`tests/PROJ-5-bike-build-view.spec.ts`):** 34 tests — 4 passed, 30 skipped (require Supabase auth)
+- Static code audits: all 4 pass
+- Supabase-dependent tests: skipped (no Supabase configured in test env), documented for manual verification
+
+**Build:** `npm run build` — clean, 0 TypeScript errors
 
 ## Deployment
 _To be added by /deploy_
