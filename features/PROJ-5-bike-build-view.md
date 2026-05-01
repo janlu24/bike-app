@@ -1,6 +1,6 @@
 # PROJ-5: Bike Build View
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
 **Last Updated:** 2026-05-01
 
@@ -156,8 +156,25 @@ The following are **already implemented** (delivered as part of PROJ-3 backend/f
 - `src/components/items/ItemForm.tsx` — parent bike select for Part/Gear
 - `src/app/(app)/garage/actions.ts` — `parent_id` handled in create/update/delete actions
 
-**Remaining work:**
-- `src/lib/items/build.test.ts` — unit tests for `computeBuild` covering all edge cases from the spec
+**Remaining work:** _(none — all backend deliverables complete)_
+
+---
+
+### Backend Implementation Notes
+
+**No new migrations required.** All database changes were delivered in `0003_item_parent_relation.sql` as part of PROJ-3:
+- `parent_id UUID REFERENCES items(id) ON DELETE SET NULL`
+- `items_parent_not_self` CHECK constraint
+- `items_parent_id_idx` index
+
+**`src/lib/items/build.test.ts`** — Added 12 unit tests for `computeBuild` covering all spec edge cases:
+- No parts: bike weight only, or `hasUnknownWeight` if bike weight is null
+- All weights known: correct sum
+- Partial null weights: `hasUnknownWeight = true`, known weights still summed
+- All null: `totalWeight = 0`, `hasUnknownWeight = true`
+- Self-reference: item with `id === bike.id` excluded even if `parent_id` matches
+- Isolation: parts from other bikes excluded
+- Immutability: frozen input array does not throw
 
 ## QA Test Results
 _To be added by /qa_
