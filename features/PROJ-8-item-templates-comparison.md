@@ -1,6 +1,6 @@
 # PROJ-8: Item Templates & Comparison
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-05-01
 **Last Updated:** 2026-05-01
 
@@ -302,6 +302,37 @@ No new npm packages required. All needed shadcn/ui components are already instal
 ### Test Results
 - 149 unit tests passing (8 test files — 52 new template validation tests)
 - `npm run build` clean — no TypeScript errors
+
+## Implementation Notes (Frontend — 2026-05-01)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/components/templates/TemplateKeyEditor.tsx` | Client component — key-only row editor (add/remove rows, `name="property_key"` arrays) |
+| `src/components/templates/TemplateForm.tsx` | Client form for create/edit; includes inline `PropagationModal` (shadcn Dialog + RadioGroup) with `formRef.requestSubmit()` pattern for post-modal submission |
+| `src/components/templates/TemplateCard.tsx` | Server-rendered card with edit/compare links and delete AlertDialog |
+| `src/app/(app)/garage/templates/page.tsx` | Template list page — loads templates + linked item counts via two queries |
+| `src/app/(app)/garage/templates/new/page.tsx` | Create template page |
+| `src/app/(app)/garage/templates/[id]/edit/page.tsx` | Edit template page — passes originalKeys + linkedItemCount to TemplateForm |
+| `src/app/(app)/garage/templates/[id]/compare/page.tsx` | Comparison page — shadcn Table + ScrollArea, property_keys as rows, items as columns |
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/components/items/ItemForm.tsx` | Added `templates` + `templateName` props; TemplateSelector (native select) shown in create mode when category has templates; MetadataEditor keyed to `selectedTemplateId` for clean re-mount on template change; template badge in edit mode |
+| `src/app/(app)/garage/page.tsx` | Added "Vorlagen" link in header |
+| `src/app/(app)/garage/new/page.tsx` | Loads user templates server-side, passes to ItemForm |
+| `src/app/(app)/garage/[id]/edit/page.tsx` | Loads template name if item has template_id, passes as badge prop |
+
+### Key Implementation Decisions
+- **PropagationModal submit pattern:** `TemplateForm` uses `formRef.requestSubmit()` after modal confirm. A `submitReady` ref prevents the `onSubmit` intercept from firing a second time. This avoids React state race conditions with `useActionState`.
+- **Category lock on edit:** Category select is disabled in edit mode — changing category after creation would orphan linked items.
+- **MetadataEditor reset via key prop:** Using `key={selectedTemplateId || 'free'}` on `MetadataEditor` forces a clean re-mount when template changes, resetting internal state without needing `useImperativeHandle`.
+- **Linked item count via two queries:** Template list loads templates first, then counts items with `.in("template_id", ids)` — type-safe without needing an embedded select join.
+
+### Test Results
+- 149/149 unit tests passing
+- `npm run build` clean — 12 routes registered, no TypeScript errors
 
 ## QA Test Results
 _To be added by /qa_

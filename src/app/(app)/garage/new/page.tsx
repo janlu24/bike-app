@@ -1,6 +1,6 @@
 import { ItemForm } from "@/components/items/ItemForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { BikeOption } from "@/types/supabase";
+import type { BikeOption, TemplateRow } from "@/types/supabase";
 
 export const metadata = {
   title: "Neues Item · Setup Registry",
@@ -14,16 +14,25 @@ export default async function NewItemPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const bikes: BikeOption[] = user
-    ? ((
-        await supabase
+  const [bikes, templates] = await Promise.all([
+    user
+      ? supabase
           .from("items")
           .select("id, brand, model")
           .eq("user_id", user.id)
           .eq("category", "Bike")
           .order("created_at", { ascending: false })
-      ).data ?? [])
-    : [];
+          .then((r) => (r.data ?? []) as BikeOption[])
+      : Promise.resolve([] as BikeOption[]),
+    user
+      ? supabase
+          .from("item_templates")
+          .select("id, name, category, property_keys")
+          .eq("user_id", user.id)
+          .order("name")
+          .then((r) => (r.data ?? []) as Pick<TemplateRow, "id" | "name" | "category" | "property_keys">[])
+      : Promise.resolve([] as Pick<TemplateRow, "id" | "name" | "category" | "property_keys">[]),
+  ]);
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
@@ -41,7 +50,7 @@ export default async function NewItemPage() {
       </div>
 
       <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
-        <ItemForm bikes={bikes} />
+        <ItemForm bikes={bikes} templates={templates} />
       </div>
     </div>
   );

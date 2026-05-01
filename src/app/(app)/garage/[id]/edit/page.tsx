@@ -1,6 +1,6 @@
 import { DeleteItemForm, ItemForm } from "@/components/items/ItemForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { BikeOption, ItemRow } from "@/types/supabase";
+import type { BikeOption, ItemRow, TemplateRow } from "@/types/supabase";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,18 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
         .order("created_at", { ascending: false })
     ).data ?? [];
 
+  // If the item is linked to a template, resolve its name for the badge.
+  let templateName: string | undefined;
+  if (item.template_id) {
+    const { data: tpl } = await supabase
+      .from("item_templates")
+      .select("name")
+      .eq("id", item.template_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    templateName = (tpl as Pick<TemplateRow, "name"> | null)?.name;
+  }
+
   return (
     <div className="mx-auto max-w-xl space-y-5">
       <div className="flex items-start justify-between gap-3">
@@ -54,7 +66,7 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
       </div>
 
       <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
-        <ItemForm item={item} bikes={bikes} />
+        <ItemForm item={item} bikes={bikes} templateName={templateName} />
       </div>
     </div>
   );

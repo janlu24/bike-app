@@ -7,7 +7,7 @@ import { computeBuild } from "@/lib/items/build";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES, isItemCategory } from "@/lib/items/categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BikeOption, ItemCategory, ItemRow } from "@/types/supabase";
-import { Plus } from "lucide-react";
+import { LayoutTemplate, Plus } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -79,13 +79,22 @@ export default async function GaragePage({ searchParams }: GaragePageProps) {
           </p>
         </div>
 
-        <Link
-          href="/garage/new"
-          className="inline-flex items-center gap-2 rounded-md border border-petrol-700 bg-petrol-600 px-3.5 py-2 text-sm font-medium text-white shadow-cockpit transition-colors hover:bg-petrol-500"
-        >
-          <Plus size={16} strokeWidth={2} aria-hidden />
-          Neues Item
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/garage/templates"
+            className="inline-flex items-center gap-2 rounded-md border border-cockpit-border px-3.5 py-2 text-sm text-cockpit-muted shadow-cockpit transition-colors hover:border-petrol-700 hover:text-cockpit-text"
+          >
+            <LayoutTemplate size={15} strokeWidth={1.75} aria-hidden />
+            Vorlagen
+          </Link>
+          <Link
+            href="/garage/new"
+            className="inline-flex items-center gap-2 rounded-md border border-petrol-700 bg-petrol-600 px-3.5 py-2 text-sm font-medium text-white shadow-cockpit transition-colors hover:bg-petrol-500"
+          >
+            <Plus size={16} strokeWidth={2} aria-hidden />
+            Neues Item
+          </Link>
+        </div>
       </header>
 
       <BikeSelector bikes={bikeOptions} activeBikeId={buildMode ? activeBike!.id : null} />

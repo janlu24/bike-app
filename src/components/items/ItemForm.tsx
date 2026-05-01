@@ -5,17 +5,21 @@ import type { ItemFormState } from "@/app/(app)/garage/schema";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
 import { CATEGORIES_WITH_PARENT } from "@/lib/items/validation";
 import { cn } from "@/lib/utils";
-import type { BikeOption, ItemCategory, ItemRow } from "@/types/supabase";
-import { Info, Save, Trash2, X } from "lucide-react";
+import type { BikeOption, ItemCategory, ItemRow, TemplateRow } from "@/types/supabase";
+import { Info, LayoutTemplate, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { ImageUploader } from "./ImageUploader";
 import { MetadataEditor } from "./MetadataEditor";
 import { WeightField } from "./WeightField";
 
+type TemplateSeed = Pick<TemplateRow, "id" | "name" | "category" | "property_keys">;
+
 interface ItemFormProps {
   item?: ItemRow;
   bikes?: BikeOption[];
+  templates?: TemplateSeed[];
+  templateName?: string;
 }
 
 const CATEGORY_TOOLTIPS: Record<ItemCategory, string> = {
@@ -27,7 +31,7 @@ const CATEGORY_TOOLTIPS: Record<ItemCategory, string> = {
 
 const initial: ItemFormState = { data: null, fieldErrors: {} };
 
-export function ItemForm({ item, bikes = [] }: ItemFormProps) {
+export function ItemForm({ item, bikes = [], templates = [], templateName }: ItemFormProps) {
   const isEdit = Boolean(item);
   const action = isEdit
     ? updateItemAction.bind(null, item!.id)
@@ -41,6 +45,20 @@ export function ItemForm({ item, bikes = [] }: ItemFormProps) {
   );
   const showParent = CATEGORIES_WITH_PARENT.includes(category);
   const availableBikes = bikes.filter((b) => b.id !== item?.id);
+
+  // Template selector state (create mode only).
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const categoryTemplates = templates.filter((t) => t.category === category);
+
+  function handleCategoryChange(cat: ItemCategory) {
+    setCategory(cat);
+    setSelectedTemplateId("");
+  }
+
+  const selectedTemplate = categoryTemplates.find((t) => t.id === selectedTemplateId);
+  const templateInitialMeta: Record<string, string> | undefined = selectedTemplate
+    ? Object.fromEntries(selectedTemplate.property_keys.map((k) => [k, ""]))
+    : undefined;
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
@@ -70,7 +88,7 @@ export function ItemForm({ item, bikes = [] }: ItemFormProps) {
           id="category"
           name="category"
           value={category}
-          onChange={(e) => setCategory(e.target.value as ItemCategory)}
+          onChange={(e) => handleCategoryChange(e.target.value as ItemCategory)}
           required
           className="w-full rounded-md border border-cockpit-border bg-cockpit-surface px-3 py-2 text-sm text-cockpit-text focus:border-petrol-500 focus:outline-none"
         >
@@ -85,6 +103,53 @@ export function ItemForm({ item, bikes = [] }: ItemFormProps) {
           <p className="text-xs text-red-400">{errors.category}</p>
         )}
       </div>
+
+      {/* Template badge (edit mode — read-only) */}
+      {isEdit && templateName && (
+        <div className="flex items-center gap-1.5 rounded-md border border-cockpit-border bg-cockpit-surface/60 px-3 py-2">
+          <LayoutTemplate size={13} strokeWidth={1.75} className="shrink-0 text-petrol-400" aria-hidden />
+          <span className="text-xs text-cockpit-muted">
+            Vorlage:{" "}
+            <span className="font-medium text-cockpit-text">{templateName}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Template selector (create mode — optional) */}
+      {!isEdit && categoryTemplates.length > 0 && (
+        <div className="space-y-1.5">
+          <label
+            htmlFor="template_id"
+            className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-cockpit-muted"
+          >
+            <LayoutTemplate size={12} strokeWidth={1.75} aria-hidden />
+            Vorlage auswählen
+            <span className="ml-0.5 font-normal normal-case">(optional)</span>
+          </label>
+          <select
+            id="template_id"
+            name="template_id"
+            value={selectedTemplateId}
+            onChange={(e) => setSelectedTemplateId(e.target.value)}
+            className="w-full rounded-md border border-cockpit-border bg-cockpit-surface px-3 py-2 text-sm text-cockpit-text focus:border-petrol-500 focus:outline-none"
+          >
+            <option value="">— Ohne Vorlage (freie Attribute) —</option>
+            {categoryTemplates.map((tpl) => (
+              <option key={tpl.id} value={tpl.id}>
+                {tpl.name}
+              </option>
+            ))}
+          </select>
+          {selectedTemplate && (
+            <p className="text-xs text-cockpit-muted">
+              Schlüssel:{" "}
+              <span className="text-cockpit-text">
+                {selectedTemplate.property_keys.join(" · ")}
+              </span>
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Parent Bike (only for Parts) */}
       {showParent && (
@@ -148,14 +213,16 @@ export function ItemForm({ item, bikes = [] }: ItemFormProps) {
 
       <fieldset className="space-y-3 rounded-md border border-cockpit-border bg-cockpit-surface/60 p-4">
         <MetadataEditor
+          key={selectedTemplateId || "free"}
           initial={
-            item?.metadata
+            templateInitialMeta ??
+            (item?.metadata
               ? Object.fromEntries(
                   Object.entries(item.metadata as Record<string, unknown>).map(
                     ([k, v]) => [k, String(v)]
                   )
                 )
-              : undefined
+              : undefined)
           }
         />
         {errors.metadata && (
