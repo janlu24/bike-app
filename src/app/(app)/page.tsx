@@ -1,9 +1,7 @@
 import { CategoryTile } from "@/components/dashboard/CategoryTile";
-import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { aggregateCounts } from "@/lib/items/aggregate";
 import { ITEM_CATEGORIES } from "@/lib/items/categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { probeSupabase, type SupabaseStatus } from "@/lib/system/status";
 import type { ItemCategory } from "@/types/supabase";
 import { Plus, Shield } from "lucide-react";
 import type { Metadata } from "next";
@@ -21,20 +19,12 @@ export default async function DashboardPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  let supabaseStatus: SupabaseStatus = "not_configured";
-  let authLabel = "anonym";
-  let authStatus: "ok" | "warn" | "muted" = "muted";
+  let username: string | null = null;
   let items: { category: ItemCategory }[] = [];
 
   if (isConfigured) {
     const supabase = await createSupabaseServerClient();
-
-    const [probeResult, { data: authData }] = await Promise.all([
-      probeSupabase(),
-      supabase.auth.getUser(),
-    ]);
-
-    supabaseStatus = probeResult;
+    const { data: authData } = await supabase.auth.getUser();
     const user = authData?.user ?? null;
 
     if (user) {
@@ -42,16 +32,8 @@ export default async function DashboardPage() {
         supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
         supabase.from("items").select("category").eq("user_id", user.id),
       ]);
-      const profile = profileResult.data ?? null;
+      username = profileResult.data?.username ?? null;
       items = (itemsResult.data ?? []) as { category: ItemCategory }[];
-
-      if (profile?.username) {
-        authStatus = "ok";
-        authLabel = `@${profile.username}`;
-      } else {
-        authStatus = "warn";
-        authLabel = "ohne Profil";
-      }
     }
   }
 
@@ -62,8 +44,8 @@ export default async function DashboardPage() {
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
-            Status
+          <p className="font-mono text-[11px] tracking-widest text-petrol-400">
+            {username ? `@${username}` : "Cockpit"}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">
             Willkommen im{" "}
@@ -95,13 +77,6 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
-
-      {/* System Status */}
-      <SystemStatus
-        supabaseStatus={supabaseStatus}
-        authLabel={authLabel}
-        authStatus={authStatus}
-      />
 
       {/* Privacy Notice */}
       <section
