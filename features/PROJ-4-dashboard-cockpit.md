@@ -1,8 +1,8 @@
 # PROJ-4: Dashboard / Cockpit
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-04-30
-**Last Updated:** 2026-04-30 (Tech Design added)
+**Last Updated:** 2026-05-01 (Backend lib files implemented)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication)
@@ -138,6 +138,19 @@ Server Page render:
 ### D) Dependencies
 
 No new packages required. All Lucide icons (Gauge, Shield, Plus, category icons) and layout primitives are already installed.
+
+## Implementation Notes (Backend — 2026-05-01)
+
+**No migrations required.** Dashboard reads existing `profiles` and `items` tables via RLS-scoped queries.
+
+**New lib files created:**
+
+| File | Tests |
+|------|-------|
+| `src/lib/items/aggregate.ts` — `aggregateCounts()` pure function; zero-fills all 4 categories | `aggregate.test.ts` — 7 tests |
+| `src/lib/system/status.ts` — `probeSupabase()` HTTP health-check with AbortController timeout | `status.test.ts` — 6 tests |
+
+**Test suite:** 110/110 passing (13 new tests added). Build: clean (no TypeScript errors).
 
 ## QA Test Results
 _To be added by /qa_
