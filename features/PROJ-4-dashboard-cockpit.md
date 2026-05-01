@@ -1,8 +1,8 @@
 # PROJ-4: Dashboard / Cockpit
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
-**Last Updated:** 2026-05-01 (Backend lib files implemented)
+**Last Updated:** 2026-05-01 (Frontend implemented — In Review)
 
 ## Dependencies
 - Requires: PROJ-1 (Authentication)
@@ -151,6 +151,21 @@ No new packages required. All Lucide icons (Gauge, Shield, Plus, category icons)
 | `src/lib/system/status.ts` — `probeSupabase()` HTTP health-check with AbortController timeout | `status.test.ts` — 6 tests |
 
 **Test suite:** 110/110 passing (13 new tests added). Build: clean (no TypeScript errors).
+
+## Implementation Notes (Frontend — 2026-05-01)
+
+**Route group consolidation:** Moved `src/app/garage/` into `src/app/(app)/garage/` and promoted the shared AppLayout to `src/app/(app)/layout.tsx`. Both `/` and `/garage/*` now share the same sticky header + BottomNav shell. Old placeholder `src/app/page.tsx` replaced by dashboard.
+
+**New files created:**
+- `src/app/(app)/page.tsx` — Dashboard server page (`force-dynamic`); parallel fetches probeSupabase + auth, then Promise.all for profile + items
+- `src/app/(app)/layout.tsx` — Shared AppLayout (moved from `garage/layout.tsx`)
+- `src/components/dashboard/CategoryTile.tsx` — Category tile with icon, count readout, empty hint, Link to filtered garage
+- `src/components/dashboard/SystemStatus.tsx` — System status card with three StatusRow entries
+
+**Updated files:**
+- `src/components/items/ItemForm.tsx` — import path updated from `@/app/garage/actions` → `@/app/(app)/garage/actions`
+
+**Build:** Clean (all routes confirmed, `ƒ` dynamic for `/`). Tests: 110/110 passing.
 
 ## QA Test Results
 _To be added by /qa_

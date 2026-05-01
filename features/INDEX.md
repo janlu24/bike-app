@@ -17,7 +17,7 @@
 | PROJ-1 | Authentication | Approved | [PROJ-1-authentication.md](PROJ-1-authentication.md) | 2026-04-30 |
 | PROJ-2 | Onboarding & Profil-Setup | Approved | [PROJ-2-onboarding-profil-setup.md](PROJ-2-onboarding-profil-setup.md) | 2026-04-30 |
 | PROJ-3 | Item Management / Garage | Approved | [PROJ-3-item-management-garage.md](PROJ-3-item-management-garage.md) | 2026-04-30 |
-| PROJ-4 | Dashboard / Cockpit | In Progress | [PROJ-4-dashboard-cockpit.md](PROJ-4-dashboard-cockpit.md) | 2026-04-30 |
+| PROJ-4 | Dashboard / Cockpit | In Review | [PROJ-4-dashboard-cockpit.md](PROJ-4-dashboard-cockpit.md) | 2026-04-30 |
 | PROJ-5 | Bike Build View | In Progress | [PROJ-5-bike-build-view.md](PROJ-5-bike-build-view.md) | 2026-04-30 |
 | PROJ-6 | User Profile Page | Planned | [PROJ-6-user-profile-page.md](PROJ-6-user-profile-page.md) | 2026-04-30 |
 | PROJ-7 | Explore / Community Feed | Planned | [PROJ-7-explore-community-feed.md](PROJ-7-explore-community-feed.md) | 2026-04-30 |

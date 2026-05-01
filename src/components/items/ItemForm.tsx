@@ -1,7 +1,7 @@
 "use client";
 
-import { createItemAction, deleteItemAction, updateItemAction } from "@/app/garage/actions";
-import type { ItemFormState } from "@/app/garage/schema";
+import { createItemAction, deleteItemAction, updateItemAction } from "@/app/(app)/garage/actions";
+import type { ItemFormState } from "@/app/(app)/garage/schema";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
 import { CATEGORIES_WITH_PARENT } from "@/lib/items/validation";
 import { cn } from "@/lib/utils";
