@@ -16,7 +16,7 @@ export const updateProfileSchema = z.object({
     .transform((v) => (v === "" ? undefined : v)),
   is_public: z.boolean().default(false),
   weight_unit: z.enum(["g", "kg"], {
-    errorMap: () => ({ message: "Ungültige Gewichtseinheit. Erlaubt: g oder kg." }),
+    error: () => ({ message: "Ungültige Gewichtseinheit. Erlaubt: g oder kg." }),
   }),
   // Avatar is validated separately in the action (File objects cannot travel through Zod cleanly
   // when parsed from FormData in all environments), but the shape is documented here.

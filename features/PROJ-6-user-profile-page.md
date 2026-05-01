@@ -1,6 +1,6 @@
 # PROJ-6: User Profile Page
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-04-30
 **Last Updated:** 2026-05-01
 
@@ -201,6 +201,29 @@ None. All decisions follow the tech design exactly:
 
 ### Type generation reminder
 No new database columns were added. Run `supabase gen types typescript` only if the migration is applied to a project where the `avatars` bucket affects generated storage types.
+
+## Implementation Notes (Frontend — 2026-05-01)
+
+### What was built
+Full frontend implementation for the User Profile Page feature.
+
+### Files created
+- `src/lib/weight-unit-context.tsx` — `WeightUnitContext`, `WeightUnitProvider`, and `useWeightUnit()` hook. Defaults to `'g'` when no context is provided.
+- `src/components/profile/AvatarUploader.tsx` — Client Component. Displays shadcn `Avatar` with a camera-button overlay to select a new avatar file. Validates size (5 MB) and MIME type client-side and shows errors in German. Submits via `name="avatar"` FormData field.
+- `src/components/profile/ProfileEditForm.tsx` — Client Component. Uses `useActionState` with `updateProfileAction`. Renders full_name (Input), bio (Textarea), weight_unit (RadioGroup g/kg with hidden input), is_public (Switch with hidden input), Save (Button). Displays success/error states from server action.
+- `src/components/profile/PublicProfileHeader.tsx` — Server-renderable Component. Shows shadcn Avatar, full_name, `@username`, bio. Email is not shown (PII guard).
+- `src/components/profile/PublicItemList.tsx` — Renders public items grouped by category without edit controls. Includes an empty state for profiles with no public items.
+- `src/app/(app)/profile/page.tsx` — Own profile page (Server Component). Fetches user + profile, redirects to `/login` or `/onboarding` as needed. Shows `ProfileEditForm`, public profile link (conditional), and sign-out button. `force-dynamic` export.
+- `src/app/profile/[username]/page.tsx` — Public profile page (Server Component, outside `(app)` group). Calls `notFound()` if profile is missing or `is_public = false`. Fetches up to 50 public items. `force-dynamic` export.
+
+### Files modified
+- `src/app/(app)/layout.tsx` — Now an `async` Server Component. Fetches the authenticated user's `weight_unit` from the profile and wraps children with `WeightUnitProvider`.
+- `src/components/items/WeightField.tsx` — Reads preferred unit from `useWeightUnit()` context as the initial unit when no `initialGrams` is present (or when `initialGrams < 1000`). The user can still toggle unit in the field.
+- `src/app/(app)/profile/schema.ts` — Fixed Zod v4 compatibility: renamed `errorMap` option to `error` in `z.enum()` call.
+
+### Deviations from spec
+- `schema.ts` bug fix: the backend-written schema used `errorMap` which is a Zod v3 API. The project uses Zod v4 which requires `error`. Fixed to unblock the build.
+- `PublicItemList` implements its own read-only `PublicItemCard` instead of reusing `ItemCard` because `ItemCard` includes an edit footer and edit link that are inappropriate for public views.
 
 ## QA Test Results
 _To be added by /qa_

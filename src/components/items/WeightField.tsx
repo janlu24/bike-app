@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useWeightUnit } from "@/lib/weight-unit-context";
 import { type WeightUnit, gramsToInputValue, parseToGrams } from "@/lib/utils/weight";
 import { useId, useState } from "react";
 
@@ -11,8 +12,13 @@ interface WeightFieldProps {
 
 export function WeightField({ initialGrams = null, error }: WeightFieldProps) {
   const inputId = useId();
+  const preferredUnit = useWeightUnit();
   const initialUnit: WeightUnit =
-    initialGrams !== null && initialGrams >= 1000 ? "kg" : "g";
+    initialGrams !== null
+      ? initialGrams >= 1000
+        ? "kg"
+        : preferredUnit
+      : preferredUnit;
 
   const [unit, setUnit] = useState<WeightUnit>(initialUnit);
   const [value, setValue] = useState<string>(
