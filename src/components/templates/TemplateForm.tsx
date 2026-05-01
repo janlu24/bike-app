@@ -125,6 +125,7 @@ export function TemplateForm({
             Kategorie
             <span aria-hidden className="ml-1 text-petrol-400">*</span>
           </label>
+          {isEdit && <input type="hidden" name="category" value={category} />}
           <select
             id="category"
             name="category"
@@ -281,7 +282,7 @@ export function TemplateForm({
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="keep" id={`keep-${key}`} className="border-cockpit-border" />
                         <Label htmlFor={`keep-${key}`} className="cursor-pointer text-xs text-cockpit-muted">
-                          Als waiser Wert behalten
+                          Als freier Wert behalten
                         </Label>
                       </div>
                     </RadioGroup>

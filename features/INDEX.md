@@ -21,7 +21,7 @@
 | PROJ-5 | Bike Build View | Approved | [PROJ-5-bike-build-view.md](PROJ-5-bike-build-view.md) | 2026-04-30 |
 | PROJ-6 | User Profile Page | Planned | [PROJ-6-user-profile-page.md](PROJ-6-user-profile-page.md) | 2026-04-30 |
 | PROJ-7 | Explore / Community Feed | Planned | [PROJ-7-explore-community-feed.md](PROJ-7-explore-community-feed.md) | 2026-04-30 |
-| PROJ-8 | Item Templates & Comparison | In Review | [PROJ-8-item-templates-comparison.md](PROJ-8-item-templates-comparison.md) | 2026-05-01 |
+| PROJ-8 | Item Templates & Comparison | Approved | [PROJ-8-item-templates-comparison.md](PROJ-8-item-templates-comparison.md) | 2026-05-01 |
 
 <!-- Add features above this line -->
 

@@ -1,6 +1,6 @@
 # PROJ-8: Item Templates & Comparison
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-05-01
 **Last Updated:** 2026-05-01
 
@@ -335,7 +335,75 @@ No new npm packages required. All needed shadcn/ui components are already instal
 - `npm run build` clean — 12 routes registered, no TypeScript errors
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-05-01
+**App URL:** http://localhost:3000
+**Tester:** QA Engineer (AI)
+
+### Acceptance Criteria Status
+
+**Vorlagen-Verwaltung**
+- [x] **AC-1: Vorlagenliste gruppiert nach Kategorie** — Pass (templates/page.tsx groups by category, renders TemplateCard per section)
+- [x] **AC-2: Neue Vorlage erstellen (Kategorie, Name, min. 1 Schlüssel)** — Pass (createTemplateAction + Zod validation in parseTemplateInput)
+- [x] **AC-3: Vorlagen immer genau einer Kategorie** — Pass (category ENUM constraint in migration; isItemCategory validation in parseTemplateInput)
+- [x] **AC-4: Vorlagennamen eindeutig pro Nutzer und Kategorie** — Pass (UNIQUE(user_id, category, name) in migration; 23505 duplicate error mapped to field error)
+- [x] **AC-5: Vorlage löschen trennt Items (kein Datenverlust)** — Pass (ON DELETE SET NULL on items.template_id; deleteTemplateAction uses direct DELETE)
+- [x] **AC-6: Vorlagen nur pro Nutzer (kein globales Teilen)** — Pass (RLS INSERT/SELECT/UPDATE/DELETE all with auth.uid() = user_id)
+
+**Items aus Vorlagen erstellen**
+- [x] **AC-7: Template-Selector bei Kategorie-Auswahl** — Pass (ItemForm shows select[name="template_id"] when categoryTemplates.length > 0)
+- [x] **AC-8: Eigenschaftsschlüssel vorausgefüllt nach Vorlagen-Auswahl** — Pass (MetadataEditor keyed by selectedTemplateId; templateInitialMeta computed from property_keys)
+- [x] **AC-9: Item mit template_id gespeichert** — Pass (createItemAction reads + verifies template_id before INSERT)
+- [x] **AC-10: Freie Items ohne Vorlage unverändert** — Pass (no template_id → createItemAction skips template verification; ItemForm unchanged for no-template path)
+
+**Vorlagenänderungen & Propagierung**
+- [x] **AC-11: Modal erscheint bei Änderungen + verlinkten Items** — Pass (handleFormSubmit calls computeTemplateDiff; modal shown when diff not empty + linkedItemCount > 0)
+- [x] **AC-12: Propagierung korrekt (hinzufügen/entfernen/behalten)** — Pass (updateTemplateAction computes diff server-side, uses Promise.all for item updates)
+- [x] **AC-13: Keine verlinkten Items → kein Modal** — Pass (handleFormSubmit returns early when linkedItemCount === 0)
+- [x] **AC-14: Modal Abbrechen → Vorlage nicht gespeichert** — Pass (e.preventDefault() holds the submit; modal cancel sets showModal=false without calling requestSubmit)
+
+**Vergleichsansicht**
+- [x] **AC-15: Vergleich ab 2 verlinkten Items** — Pass (compare link active only when linkedItemCount >= 2; TemplateCard renders disabled span otherwise)
+- [x] **AC-16: Tabelle: Eigenschaften = Zeilen, Items = Spalten** — Pass (compare/page.tsx thead=item columns, tbody=property_key rows; th[scope="col"] + th[scope="row"])
+- [x] **AC-17: "Waiser Wert" nicht in Vergleichstabelle** — Pass (compare page iterates only template.property_keys; orphaned metadata keys not included)
+
+### A11y Check
+- [x] **Keyboard navigation:** All form controls reachable via Tab; submit buttons accessible
+- [x] **ARIA labels:** compare table uses th[scope="col/row"]; disabled compare link uses aria-disabled="true" on span
+- [x] **Semantic HTML:** form, fieldset, label[for=], table, thead, tbody, th, td — all correctly used
+- [x] **Error messages:** role="alert" on server action error; aria-invalid on name input when errors.name truthy
+
+### Security & Privacy Audit
+- [x] **RLS Verification:** All CRUD actions verify user session before DB access; SELECT/UPDATE/DELETE server-side include .eq("user_id", user.id); RLS policies enforce at DB layer too (double protection)
+- [x] **Ownership on item create:** createItemAction validates template_id against DB (SELECT WHERE user_id = auth.uid()) before linking — prevents IDOR
+- [x] **PII Protection:** No emails, tokens, or user IDs in rendered HTML or console; templateName displayed to owner only
+- [x] **XSS:** All template names/keys rendered via React JSX (no dangerouslySetInnerHTML); React auto-escapes
+- [x] **UUID injection:** isValidTemplateId() validates UUID regex before any DB query; invalid values rejected with 404
+- [x] **SQLi:** All DB queries via Supabase JS client parameterized queries; no raw SQL interpolation
+- [x] **Category lock:** Category cannot be changed after creation (disabled select + hidden input); prevents orphaning linked items
+
+### Bugs Found
+
+#### BUG-1: Disabled select category not submitted in edit mode
+- **Severity:** High (completely prevents template editing from working)
+- **Steps:** 1. Create a template. 2. Navigate to its edit page. 3. Submit any change. 4. Form validation fails with "Bitte eine Kategorie auswählen."
+- **Root Cause:** HTML spec: disabled form controls are excluded from FormData. `formData.get("category")` returned null → parseTemplateInput returned fieldErrors.category.
+- **Fix Applied:** Added `{isEdit && <input type="hidden" name="category" value={category} />}` in TemplateForm.tsx alongside the disabled visual select.
+- **Status:** Fixed ✓
+
+#### BUG-2: Typo in PropagationModal label
+- **Severity:** Low (cosmetic, German UI text)
+- **Steps:** Edit a template with linked items, trigger propagation modal, observe "Als waiser Wert behalten" label.
+- **Root Cause:** Typo: "waiser" → should be "freier".
+- **Fix Applied:** Corrected to "Als freier Wert behalten" in TemplateForm.tsx.
+- **Status:** Fixed ✓
+
+### Summary
+- **AC Status:** 17/17 passed
+- **Security:** Pass — all ownership checks, RLS policies, and injection protections verified
+- **Bugs Found:** 2 (1 High, 1 Low) — both fixed during this QA session
+- **Tests:** 149/149 unit tests passing; 57 E2E tests written (12 passing, 45 skipped — require live Supabase auth, consistent with all other PROJ test files); `npm run build` clean
+- **Production Ready:** **YES**
 
 ## Deployment
 _To be added by /deploy_
