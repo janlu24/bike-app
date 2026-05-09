@@ -29,6 +29,13 @@ export function ItemPickerSheet({ tourId, garageItems, packlistItemIds }: ItemPi
   const [adding, setAdding] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Lookup map for parent item names (to show "Montiert an: …" hints).
+  const itemById = useMemo(() => {
+    const map = new Map<string, ItemRow>();
+    for (const item of garageItems) map.set(item.id, item);
+    return map;
+  }, [garageItems]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return garageItems.filter((item) => {
@@ -117,6 +124,10 @@ export function ItemPickerSheet({ tourId, garageItems, packlistItemIds }: ItemPi
                     const onList = packlistItemIds.has(item.id);
                     const isAdding = adding === item.id && isPending;
                     const itemLabel = `${item.brand}${item.model ? ` ${item.model}` : ""}`;
+                    const parent = item.parent_id ? itemById.get(item.parent_id) : null;
+                    const parentLabel = parent
+                      ? `${parent.brand}${parent.model ? ` ${parent.model}` : ""}`
+                      : null;
 
                     return (
                       <li key={item.id}>
@@ -126,10 +137,15 @@ export function ItemPickerSheet({ tourId, garageItems, packlistItemIds }: ItemPi
                           </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-cockpit-text truncate">{itemLabel}</p>
-                            <p className="text-xs text-cockpit-muted flex items-center gap-2">
+                            <p className="text-xs text-cockpit-muted flex items-center gap-2 flex-wrap">
                               <span>{config.label}</span>
                               {item.weight_g !== null && (
                                 <span className="tabular-nums">{formatWeight(item.weight_g)}</span>
+                              )}
+                              {parentLabel && (
+                                <span className="text-cockpit-muted/60 truncate">
+                                  Montiert an: {parentLabel}
+                                </span>
                               )}
                             </p>
                           </div>
