@@ -24,7 +24,9 @@
 | PROJ-8 | Item Templates & Comparison | Approved | [PROJ-8-item-templates-comparison.md](PROJ-8-item-templates-comparison.md) | 2026-05-01 |
 | PROJ-9 | Guest vs. Member Mode | Approved | [PROJ-9-guest-vs-member-mode.md](PROJ-9-guest-vs-member-mode.md) | 2026-05-02 |
 | PROJ-10 | Refactoring & Groups Enhancement | Approved | [PROJ-10-refactoring-groups-enhancement.md](PROJ-10-refactoring-groups-enhancement.md) | 2026-05-09 |
+| PROJ-11 | Tour Management & Packliste | Planned | [PROJ-11-tour-management-packliste.md](PROJ-11-tour-management-packliste.md) | 2026-05-09 |
+| PROJ-12 | Tour Item Feedback & Garage History | Planned | [PROJ-12-tour-item-feedback-garage-history.md](PROJ-12-tour-item-feedback-garage-history.md) | 2026-05-09 |
 
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-11
+## Next Available ID: PROJ-13

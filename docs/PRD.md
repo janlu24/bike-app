@@ -24,6 +24,11 @@ The Setup Registry ist ein digitaler Zwilling für sportliche Radsport-Enthusias
 | P0 (MVP) | PROJ-5: Bike Build View | In Progress |
 | P1 | PROJ-6: User Profile Page | Planned |
 | P1 | PROJ-7: Explore / Community Feed | Planned |
+| P1 | PROJ-8: Item Templates & Comparison | Planned |
+| P1 | PROJ-9: Guest vs. Member Mode | Planned |
+| P1 | PROJ-10: Refactoring & Groups Enhancement | Planned |
+| P1 | PROJ-11: Tour Management & Packliste | Planned |
+| P1 | PROJ-12: Tour Item Feedback & Garage History | Planned |
 
 ## Success Metrics
 - Aktiv geteilte Setups: Nutzer mit `is_public = true` auf Profil und mindestens einem Item
@@ -39,7 +44,7 @@ The Setup Registry ist ein digitaler Zwilling für sportliche Radsport-Enthusias
 
 ## Non-Goals
 - Kein Marktplatz oder Kauf/Verkauf-Funktion
-- Keine Fitness- oder GPS-Tracking-Integration (kein Strava-Import)
+- Keine Fitness- oder GPS-Tracking-Integration (kein Strava-Import für Phase 1; Komoot/Strava Tour-Daten-Import ist für Phase 2 vorbereitet, aber nicht implementiert)
 - Kein nativer App-Store-Release — PWA im Browser reicht für MVP
 - Kein Service-Log oder Wartungsintervall-Tracking in Phase 1
 - Keine Preisdatenbank oder Komponentenwert-Bewertung

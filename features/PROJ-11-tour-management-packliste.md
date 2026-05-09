@@ -1,0 +1,102 @@
+# PROJ-11: Tour Management & Packliste
+
+## Status: Planned
+**Created:** 2026-05-09
+**Last Updated:** 2026-05-09
+
+## Dependencies
+- Requires: PROJ-1 (User Authentication) — Touren sind nutzerspezifisch
+- Requires: PROJ-3 (Item Management / Garage) — Items aus der Garage werden der Packliste hinzugefügt
+- Optional: PROJ-7 (Explore / Community Feed) — öffentliche Touren können im Feed erscheinen
+
+## User Stories
+- Als Nutzer möchte ich eine neue Tour anlegen (mit Namen, Start, Ziel und Rohdaten), damit ich meine Ausfahrten strukturiert erfassen kann.
+- Als Nutzer möchte ich zwischen "Geplant" und "Gefahren" unterscheiden können, damit ich Planung und Ausführung einer Tour trennen kann.
+- Als Nutzer möchte ich eine Packliste für eine Tour erstellen, indem ich Items aus meiner Garage hinzufüge, damit ich vor der Tour weiß, was ich mitnehme.
+- Als Nutzer möchte ich das Gesamtgewicht meiner Packliste sehen, damit ich mein Setup optimieren kann.
+- Als Nutzer möchte ich Items aus der Packliste wieder entfernen können, damit ich die Liste anpassen kann.
+- Als Nutzer möchte ich eine Tour als öffentlich oder privat markieren können, damit ich selbst entscheide, was geteilt wird.
+- Als Nutzer möchte ich alle meine Touren in einer Übersicht sehen, damit ich meine Tour-Historie im Blick behalte.
+- Als zukünftige Erweiterung: Ich möchte Tour-Daten aus Komoot/Strava importieren können, damit ich sie nicht manuell eingeben muss (Vorbereitung, nicht MVP).
+
+## Acceptance Criteria
+
+### Tour erstellen
+- [ ] Gegeben ein eingeloggter Nutzer auf /tours — wenn er "Neue Tour" klickt — dann öffnet sich ein Formular zur Tour-Erstellung.
+- [ ] Das System soll das Feld "Name" als einziges Pflichtfeld vorschreiben. Alle anderen Felder sind optional.
+- [ ] Das Formular enthält folgende Felder:
+  - Name (Text, required)
+  - Datum (Date, optional)
+  - Start (Text, optional)
+  - Ziel (Text, optional)
+  - Status (Select: "Geplant" | "Gefahren", default: "Geplant")
+  - Geplante km (Dezimalzahl ≥ 0, optional)
+  - Geplante Höhenmeter aufwärts (Ganzzahl ≥ 0, optional)
+  - Geplante Höhenmeter abwärts (Ganzzahl ≥ 0, optional)
+  - Gefahrene km (Dezimalzahl ≥ 0, optional)
+  - Gefahrene Höhenmeter aufwärts (Ganzzahl ≥ 0, optional)
+  - Gefahrene Höhenmeter abwärts (Ganzzahl ≥ 0, optional)
+  - Dauer (Text, z.B. "3:45h" oder Minuten als Zahl, optional)
+  - Öffentlich (Toggle/Checkbox, default: false)
+- [ ] Gegeben ein gültiges Formular — wenn der Nutzer speichert — dann wird die Tour in der Datenbank angelegt und der Nutzer zur Tour-Detailseite weitergeleitet.
+
+### Tour bearbeiten & löschen
+- [ ] Das System soll das Bearbeiten aller Felder einer bestehenden Tour erlauben.
+- [ ] Gegeben eine Tour im Status "Geplant" — wenn der Nutzer den Status auf "Gefahren" setzt und Real-Daten einträgt — dann werden die Fehlenden Felder (gefahrene km, Höhenmeter, Dauer) ausgefüllt.
+- [ ] Das System soll das Löschen einer Tour nur dem Besitzer erlauben, mit Bestätigungsdialog.
+- [ ] Beim Löschen einer Tour werden alle zugehörigen Packlisten-Einträge ebenfalls gelöscht (CASCADE).
+
+### Packliste
+- [ ] Gegeben eine Tour-Detailseite — der Nutzer kann Items aus seiner Garage der Packliste hinzufügen.
+- [ ] Das System zeigt beim Hinzufügen eine durchsuchbare/filterbare Liste der eigenen Garage-Items an.
+- [ ] Das System soll ein Item nur einmal pro Tour in der Packliste erlauben (keine Duplikate).
+- [ ] Das System soll das Gesamtgewicht aller Packlisten-Items mit bekanntem Gewicht in Echtzeit anzeigen.
+- [ ] Der Nutzer kann Items aus der Packliste wieder entfernen.
+- [ ] Die Packliste zeigt pro Item: Name, Kategorie, Gewicht (falls vorhanden), Bild (falls vorhanden).
+
+### Tour-Übersicht
+- [ ] Das System zeigt alle Touren des eingeloggten Nutzers unter /tours sortiert nach Datum (neueste zuerst).
+- [ ] Die Übersicht zeigt pro Tour: Name, Datum, Status (Badge), km (gefahren oder geplant), Anzahl Packlisten-Items.
+- [ ] Gegeben ein Nutzer ohne Touren — dann wird ein leerer Zustand mit CTA "Erste Tour anlegen" angezeigt.
+
+### Navigation
+- [ ] Das System soll einen neuen Eintrag "Touren" in der Bottom-Navigation hinzufügen (Route: /tours).
+- [ ] Die Bottom-Nav enthält dann: Dashboard, Garage, Touren, Explore, Profil.
+
+### Sichtbarkeit & Zukünftige Integration
+- [ ] Touren mit `is_public = true` sind für andere Nutzer sichtbar (Vorbereitung für Explore-Integration).
+- [ ] Die Datenbankstruktur für Touren soll ein optionales Feld `external_source` (z.B. "komoot", "strava") und `external_id` vorsehen, für zukünftige API-Importe.
+
+## Edge Cases
+- Alle Zahlenfelder (km, Höhenmeter) dürfen nicht negativ sein.
+- Dauer-Feld: Freitext akzeptieren ("3:45", "3h45", "225min") — Validierung mit Hinweis, aber kein hartes Format-Enforcement im MVP.
+- Ein Item kann mehreren Touren zugewiesen werden (Mehrfachnutzung ist gewünscht).
+- Tour ohne ein einziges Packlisten-Item ist erlaubt (nur Rohdaten).
+- Wenn ein Item aus der Garage gelöscht wird, während es in einer Packliste ist: Packlisten-Eintrag wird ebenfalls gelöscht (CASCADE), Tour bleibt erhalten.
+- Wenn ein Nutzer nicht eingeloggt ist und /tours aufruft: Weiterleitung zur Login-Seite.
+- Öffentliche Tour von fremdem Nutzer: Nur lesbar, kein Bearbeiten, kein Hinzufügen zur eigenen Packliste.
+
+## Data & Privacy (PII)
+- PII involved: Indirekt — Name der Tour und Start/Ziel-Orte könnten Standortbezug haben. Bei öffentlichen Touren werden diese Felder öffentlich sichtbar. Nutzer wird bei "Öffentlich"-Toggle darauf hingewiesen.
+- Touren sind standardmäßig privat (`is_public = false`).
+
+## Technical & UI Requirements
+- **A11y:** Formularfelder mit korrekt verknüpften Labels, Fehlermeldungen als `aria-describedby`
+- **Performance:** Tourliste lädt in < 300ms, Packlisten-Suche reagiert in < 200ms
+- **Security:** Alle Mutations erfordern Authentifizierung; RLS sichert Daten auf Datenbankebene
+- **Browser Support:** Chrome, Firefox, Safari (Desktop + Mobile)
+- **Future-Proofing:** DB-Schema enthält `external_source` und `external_id` für Komoot/Strava-Import (nullable, nicht im UI)
+
+---
+
+## Tech Design (Solution Architect)
+_To be added by /architecture_
+
+## Implementation Notes
+_To be added by /frontend and /backend_
+
+## QA Test Results
+_To be added by /qa_
+
+## Deployment
+_To be added by /deploy_
