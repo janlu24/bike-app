@@ -1,6 +1,6 @@
 # PROJ-11: Tour Management & Packliste
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-05-09
 **Last Updated:** 2026-05-09
 
@@ -217,6 +217,29 @@ Keine neuen Pakete erforderlich. Alle UI-Primitive sind bereits installiert (She
 - `removeTourItemAction(tourId, itemId)` — removes item from packlist; explicit ownership check before delete
 
 **⚠️ Action required:** Run `supabase db push` to apply migration, then `supabase gen types typescript --local > src/types/supabase.ts` to update TypeScript types before building.
+
+### Frontend (2026-05-09)
+
+**Components:**
+- `src/components/tours/TourForm.tsx` — create/edit form with all fields, `useActionState`, Server Action binding
+- `src/components/tours/TourStatusBadge.tsx` — "Geplant" / "Gefahren" badge
+- `src/components/tours/TourStatsGrid.tsx` — planned vs. actual stats table
+- `src/components/tours/TourCard.tsx` — card for tour overview list
+- `src/components/tours/ItemPickerSheet.tsx` — bottom sheet with search for adding garage items to packlist (Client Component)
+- `src/components/tours/TourPacklist.tsx` — packlist with total weight and remove buttons (Client Component)
+
+**Pages:**
+- `src/app/(app)/tours/page.tsx` — tour list with item count per tour
+- `src/app/(app)/tours/new/page.tsx` — new tour form
+- `src/app/(app)/tours/[id]/page.tsx` — tour detail with stats, packlist, delete confirm dialog
+- `src/app/(app)/tours/[id]/edit/page.tsx` — edit form with owner guard
+
+**Other:**
+- `src/lib/tours/utils.ts` — formatting helpers (duration, distance, elevation, date)
+- `src/components/BottomNav.tsx` — extended with "Touren" tab (Map icon, 5 items total)
+- `src/types/supabase.ts` — added `TourRow`, `TourStatus`, and re-added missing aliases (`ItemRow`, `ItemCategory`, `BikeOption`, `GroupRow`, `ProfileRow`) that were dropped by `supabase gen types`
+
+**Build:** ✅ `npm run build` passes, 0 TypeScript errors. All tour routes visible in build output.
 
 ## QA Test Results
 _To be added by /qa_

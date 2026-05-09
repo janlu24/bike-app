@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bike, Compass, Home, User } from "lucide-react";
+import { Bike, Compass, Home, Map, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,6 +14,7 @@ type NavItem = {
 const items: NavItem[] = [
   { href: "/", label: "Dashboard", Icon: Home },
   { href: "/garage", label: "Garage", Icon: Bike },
+  { href: "/tours", label: "Touren", Icon: Map },
   { href: "/explore", label: "Entdecken", Icon: Compass },
   { href: "/profile", label: "Profil", Icon: User },
 ];

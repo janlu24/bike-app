@@ -183,6 +183,119 @@ export type Database = {
         }
         Relationships: []
       }
+      tour_items: {
+        Row: {
+          added_at: string
+          id: string
+          item_id: string
+          tour_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          item_id: string
+          tour_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          item_id?: string
+          tour_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_items_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tours: {
+        Row: {
+          actual_distance_km: number | null
+          actual_elevation_down_m: number | null
+          actual_elevation_up_m: number | null
+          created_at: string
+          date: string | null
+          destination: string | null
+          duration_hours: number | null
+          duration_minutes: number | null
+          external_id: string | null
+          external_source: string | null
+          id: string
+          is_public: boolean
+          name: string
+          planned_distance_km: number | null
+          planned_elevation_down_m: number | null
+          planned_elevation_up_m: number | null
+          start_location: string | null
+          status: Database["public"]["Enums"]["tour_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_distance_km?: number | null
+          actual_elevation_down_m?: number | null
+          actual_elevation_up_m?: number | null
+          created_at?: string
+          date?: string | null
+          destination?: string | null
+          duration_hours?: number | null
+          duration_minutes?: number | null
+          external_id?: string | null
+          external_source?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          planned_distance_km?: number | null
+          planned_elevation_down_m?: number | null
+          planned_elevation_up_m?: number | null
+          start_location?: string | null
+          status?: Database["public"]["Enums"]["tour_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_distance_km?: number | null
+          actual_elevation_down_m?: number | null
+          actual_elevation_up_m?: number | null
+          created_at?: string
+          date?: string | null
+          destination?: string | null
+          duration_hours?: number | null
+          duration_minutes?: number | null
+          external_id?: string | null
+          external_source?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          planned_distance_km?: number | null
+          planned_elevation_down_m?: number | null
+          planned_elevation_up_m?: number | null
+          start_location?: string | null
+          status?: Database["public"]["Enums"]["tour_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tours_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -192,6 +305,7 @@ export type Database = {
     }
     Enums: {
       item_category: "Bike" | "Part" | "Gear" | "Clothing"
+      tour_status: "planned" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -323,15 +437,19 @@ export const Constants = {
   public: {
     Enums: {
       item_category: ["Bike", "Part", "Gear", "Clothing"],
+      tour_status: ["planned", "completed"],
     },
   },
 } as const
 
-// Convenience type aliases used throughout the codebase
-export type ItemRow = Database["public"]["Tables"]["items"]["Row"]
-export type ItemInsert = Database["public"]["Tables"]["items"]["Insert"]
-export type ItemUpdate = Database["public"]["Tables"]["items"]["Update"]
-export type GroupRow = Database["public"]["Tables"]["item_groups"]["Row"]
-export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"]
-export type ItemCategory = Database["public"]["Enums"]["item_category"]
-export type BikeOption = { id: string; brand: string; model: string | null }
+// ---------------------------------------------------------------------------
+// Convenience aliases — used throughout the codebase
+// ---------------------------------------------------------------------------
+export type ItemRow = Tables<"items">;
+export type ItemCategory = Enums<"item_category">;
+export type BikeOption = { id: string; brand: string; model: string | null };
+export type GroupRow = Tables<"item_groups">;
+export type ProfileRow = Tables<"profiles">;
+export type TourRow = Tables<"tours">;
+export type TourItemRow = Tables<"tour_items">;
+export type TourStatus = Enums<"tour_status">;
