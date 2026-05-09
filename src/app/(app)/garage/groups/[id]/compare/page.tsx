@@ -1,6 +1,6 @@
 import { CATEGORY_CONFIG } from "@/lib/items/categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { ItemCategory, TemplateRow } from "@/types/supabase";
+import type { GroupRow, ItemCategory } from "@/types/supabase";
 import {
   Table,
   TableBody,
@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -20,7 +21,31 @@ interface ComparePageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function CompareTemplatePage({ params }: ComparePageProps) {
+interface ItemWithMeta {
+  id: string;
+  brand: string;
+  model: string | null;
+  metadata: Record<string, unknown>;
+}
+
+function computeIndividualProps(
+  items: ItemWithMeta[],
+  groupKeys: Set<string>
+): Array<{ item: ItemWithMeta; props: Record<string, string> }> {
+  return items
+    .map((item) => {
+      const individual: Record<string, string> = {};
+      for (const [key, val] of Object.entries(item.metadata)) {
+        if (!groupKeys.has(key)) {
+          individual[key] = val !== null && val !== undefined ? String(val) : "";
+        }
+      }
+      return { item, props: individual };
+    })
+    .filter(({ props }) => Object.keys(props).length > 0);
+}
+
+export default async function CompareGroupPage({ params }: ComparePageProps) {
   const { id } = await params;
 
   const supabase = await createSupabaseServerClient();
@@ -30,50 +55,52 @@ export default async function CompareTemplatePage({ params }: ComparePageProps) 
   if (!user) notFound();
 
   const { data: raw } = await supabase
-    .from("item_templates")
+    .from("item_groups")
     .select("id, category, name, property_keys, created_at, updated_at, user_id")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (!raw) notFound();
-  const template = raw as TemplateRow;
+  const group = raw as GroupRow;
 
   const { data: rawItems } = await supabase
     .from("items")
     .select("id, brand, model, metadata")
-    .eq("template_id", id)
+    .eq("group_id", id)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const items = rawItems ?? [];
+  const items = (rawItems ?? []) as ItemWithMeta[];
 
   if (items.length < 2) {
     return (
       <div className="mx-auto max-w-xl space-y-5">
-        <BackLink />
+        <BackLinks id={id} />
         <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-8 text-center shadow-cockpit">
           <p className="text-sm text-cockpit-muted">
             Mindestens 2 verknüpfte Items nötig für den Vergleich.
           </p>
           <Link
-            href={`/garage/templates/${id}/edit`}
+            href={`/garage/groups/${id}/edit`}
             className="mt-4 inline-block text-xs text-petrol-400 hover:underline"
           >
-            Vorlage bearbeiten
+            Gruppe bearbeiten
           </Link>
         </div>
       </div>
     );
   }
 
-  const config = CATEGORY_CONFIG[template.category as ItemCategory];
+  const config = CATEGORY_CONFIG[group.category as ItemCategory];
   const CatIcon = config.icon;
+  const groupKeySet = new Set(group.property_keys);
+  const itemsWithIndividual = computeIndividualProps(items, groupKeySet);
 
   return (
     <div className="space-y-5">
       <div>
-        <BackLink />
+        <BackLinks id={id} />
         <div className="mt-3 flex items-center gap-2">
           <CatIcon size={14} strokeWidth={1.75} className="text-petrol-400" aria-hidden />
           <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
@@ -81,10 +108,10 @@ export default async function CompareTemplatePage({ params }: ComparePageProps) 
           </p>
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          <span className="text-petrol-400">{template.name}</span>
+          <span className="text-petrol-400">{group.name}</span>
         </h1>
         <p className="mt-1 text-sm text-cockpit-muted">
-          {items.length} Items verglichen · {template.property_keys.length} Eigenschaften
+          {items.length} Items verglichen · {group.property_keys.length} Eigenschaften
         </p>
       </div>
 
@@ -116,7 +143,7 @@ export default async function CompareTemplatePage({ params }: ComparePageProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {template.property_keys.map((key, rowIdx) => (
+            {group.property_keys.map((key, rowIdx) => (
               <TableRow
                 key={key}
                 className={
@@ -132,8 +159,7 @@ export default async function CompareTemplatePage({ params }: ComparePageProps) 
                   {key}
                 </th>
                 {items.map((item) => {
-                  const meta = (item.metadata as Record<string, unknown>) ?? {};
-                  const val = meta[key];
+                  const val = item.metadata[key];
                   const display =
                     val !== undefined && val !== null && String(val).trim() !== ""
                       ? String(val)
@@ -157,18 +183,64 @@ export default async function CompareTemplatePage({ params }: ComparePageProps) 
         </Table>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+
+      {itemsWithIndividual.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-widest text-cockpit-muted">
+            Individuelle Eigenschaften
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {itemsWithIndividual.map(({ item, props }) => (
+              <Card
+                key={item.id}
+                className="border-cockpit-border bg-cockpit-surface shadow-cockpit"
+              >
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-sm font-medium text-cockpit-text">
+                    <Link
+                      href={`/garage/${item.id}/edit`}
+                      className="hover:text-petrol-400"
+                    >
+                      {item.brand}
+                      {item.model ? ` ${item.model}` : ""}
+                    </Link>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <dl className="space-y-1">
+                    {Object.entries(props).map(([key, val]) => (
+                      <div key={key} className="flex gap-2 text-xs">
+                        <dt className="shrink-0 text-cockpit-muted">{key}:</dt>
+                        <dd className="text-cockpit-text">{val || "—"}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
-function BackLink() {
+function BackLinks({ id }: { id: string }) {
   return (
-    <Link
-      href="/garage/templates"
-      className="inline-flex items-center gap-1 text-xs text-cockpit-muted hover:text-cockpit-text"
-    >
-      <ChevronLeft size={14} strokeWidth={1.75} aria-hidden />
-      Zurück zu Vorlagen
-    </Link>
+    <div className="flex flex-wrap items-center gap-3">
+      <Link
+        href="/garage/groups"
+        className="inline-flex items-center gap-1 text-xs text-cockpit-muted hover:text-cockpit-text"
+      >
+        <ChevronLeft size={14} strokeWidth={1.75} aria-hidden />
+        Zurück zu Gruppen
+      </Link>
+      <Link
+        href="/garage"
+        className="inline-flex items-center gap-1 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted hover:text-cockpit-text"
+      >
+        ← Zur Garage
+      </Link>
+    </div>
   );
 }

@@ -27,7 +27,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   const { data: rawItems } = await supabase
     .from("items")
-    .select("id, category, brand, model, weight_g, is_public, metadata, image_url, user_id, parent_id, template_id, created_at, updated_at")
+    .select("id, category, brand, model, weight_g, is_public, metadata, image_url, user_id, parent_id, group_id, created_at, updated_at")
     .eq("user_id", profile.id)
     .eq("is_public", true)
     .order("category")

@@ -1,6 +1,6 @@
 import { ItemForm } from "@/components/items/ItemForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { BikeOption, TemplateRow } from "@/types/supabase";
+import type { BikeOption, GroupRow } from "@/types/supabase";
 
 export const metadata = {
   title: "Neues Item · Setup Registry",
@@ -26,12 +26,12 @@ export default async function NewItemPage() {
       : Promise.resolve([] as BikeOption[]),
     user
       ? supabase
-          .from("item_templates")
+          .from("item_groups")
           .select("id, name, category, property_keys")
           .eq("user_id", user.id)
           .order("name")
-          .then((r) => (r.data ?? []) as Pick<TemplateRow, "id" | "name" | "category" | "property_keys">[])
-      : Promise.resolve([] as Pick<TemplateRow, "id" | "name" | "category" | "property_keys">[]),
+          .then((r) => (r.data ?? []) as Pick<GroupRow, "id" | "name" | "category" | "property_keys">[])
+      : Promise.resolve([] as Pick<GroupRow, "id" | "name" | "category" | "property_keys">[]),
   ]);
 
   return (

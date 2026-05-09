@@ -81,11 +81,11 @@ export default async function GaragePage({ searchParams }: GaragePageProps) {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/garage/templates"
+            href="/garage/groups"
             className="inline-flex items-center gap-2 rounded-md border border-cockpit-border px-3.5 py-2 text-sm text-cockpit-muted shadow-cockpit transition-colors hover:border-petrol-700 hover:text-cockpit-text"
           >
             <LayoutTemplate size={15} strokeWidth={1.75} aria-hidden />
-            Vorlagen
+            Gruppen
           </Link>
           <Link
             href="/garage/new"

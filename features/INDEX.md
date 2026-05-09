@@ -23,7 +23,8 @@
 | PROJ-7 | Explore / Community Feed | Approved | [PROJ-7-explore-community-feed.md](PROJ-7-explore-community-feed.md) | 2026-04-30 |
 | PROJ-8 | Item Templates & Comparison | Approved | [PROJ-8-item-templates-comparison.md](PROJ-8-item-templates-comparison.md) | 2026-05-01 |
 | PROJ-9 | Guest vs. Member Mode | Approved | [PROJ-9-guest-vs-member-mode.md](PROJ-9-guest-vs-member-mode.md) | 2026-05-02 |
+| PROJ-10 | Refactoring & Groups Enhancement | Approved | [PROJ-10-refactoring-groups-enhancement.md](PROJ-10-refactoring-groups-enhancement.md) | 2026-05-09 |
 
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-10
+## Next Available ID: PROJ-11

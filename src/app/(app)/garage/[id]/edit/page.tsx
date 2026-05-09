@@ -1,6 +1,6 @@
 import { DeleteItemForm, ItemForm } from "@/components/items/ItemForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { BikeOption, ItemRow, TemplateRow } from "@/types/supabase";
+import type { BikeOption, GroupRow, ItemRow } from "@/types/supabase";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -38,16 +38,16 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
         .order("created_at", { ascending: false })
     ).data ?? [];
 
-  // If the item is linked to a template, resolve its name for the badge.
-  let templateName: string | undefined;
-  if (item.template_id) {
-    const { data: tpl } = await supabase
-      .from("item_templates")
+  // If the item is linked to a group, resolve its name for the badge.
+  let groupName: string | undefined;
+  if (item.group_id) {
+    const { data: grp } = await supabase
+      .from("item_groups")
       .select("name")
-      .eq("id", item.template_id)
+      .eq("id", item.group_id)
       .eq("user_id", user.id)
       .maybeSingle();
-    templateName = (tpl as Pick<TemplateRow, "name"> | null)?.name;
+    groupName = (grp as Pick<GroupRow, "name"> | null)?.name;
   }
 
   return (
@@ -66,7 +66,7 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
       </div>
 
       <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
-        <ItemForm item={item} bikes={bikes} templateName={templateName} />
+        <ItemForm item={item} bikes={bikes} groupName={groupName} />
       </div>
     </div>
   );

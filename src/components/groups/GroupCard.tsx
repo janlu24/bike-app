@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteTemplateAction } from "@/app/(app)/garage/templates/actions";
+import { deleteGroupAction } from "@/app/(app)/garage/groups/actions";
 import { CATEGORY_CONFIG } from "@/lib/items/categories";
 import type { ItemCategory } from "@/types/supabase";
 import { BarChart2, Pencil, Trash2 } from "lucide-react";
@@ -18,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-interface TemplateCardProps {
+interface GroupCardProps {
   id: string;
   name: string;
   category: ItemCategory;
@@ -26,13 +26,13 @@ interface TemplateCardProps {
   linkedItemCount: number;
 }
 
-export function TemplateCard({
+export function GroupCard({
   id,
   name,
   category,
   keyCount,
   linkedItemCount,
-}: TemplateCardProps) {
+}: GroupCardProps) {
   const config = CATEGORY_CONFIG[category];
   const Icon = config.icon;
   const canCompare = linkedItemCount >= 2;
@@ -56,7 +56,7 @@ export function TemplateCard({
         {/* Compare */}
         {canCompare ? (
           <Link
-            href={`/garage/templates/${id}/compare`}
+            href={`/garage/groups/${id}/compare`}
             className="inline-flex items-center gap-1 rounded-md border border-cockpit-border px-2 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
             title="Vergleichsansicht"
           >
@@ -76,9 +76,9 @@ export function TemplateCard({
 
         {/* Edit */}
         <Link
-          href={`/garage/templates/${id}/edit`}
+          href={`/garage/groups/${id}/edit`}
           className="inline-flex items-center gap-1 rounded-md border border-cockpit-border px-2 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
-          title="Vorlage bearbeiten"
+          title="Gruppe bearbeiten"
         >
           <Pencil size={13} strokeWidth={1.75} aria-hidden />
           Bearbeiten
@@ -89,8 +89,8 @@ export function TemplateCard({
           <AlertDialogTrigger asChild>
             <button
               className="inline-flex items-center rounded-md border border-cockpit-border p-1.5 text-cockpit-muted transition-colors hover:border-red-700 hover:text-red-400"
-              title="Vorlage löschen"
-              aria-label={`Vorlage "${name}" löschen`}
+              title="Gruppe löschen"
+              aria-label={`Gruppe "${name}" löschen`}
             >
               <Trash2 size={13} strokeWidth={1.75} aria-hidden />
             </button>
@@ -98,7 +98,7 @@ export function TemplateCard({
           <AlertDialogContent className="border-cockpit-border bg-cockpit-surface text-cockpit-text">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-base">
-                Vorlage löschen?
+                Gruppe löschen?
               </AlertDialogTitle>
               <AlertDialogDescription className="text-cockpit-muted">
                 {linkedItemCount > 0 ? (
@@ -109,7 +109,7 @@ export function TemplateCard({
                     <strong className="text-cockpit-text">keine Daten verloren</strong>.
                   </>
                 ) : (
-                  "Diese Vorlage hat keine verknüpften Items und wird dauerhaft gelöscht."
+                  "Diese Gruppe hat keine verknüpften Items und wird dauerhaft gelöscht."
                 )}
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -118,7 +118,7 @@ export function TemplateCard({
                 Abbrechen
               </AlertDialogCancel>
               <form
-                action={deleteTemplateAction}
+                action={deleteGroupAction}
                 onSubmit={() => setDeleting(true)}
               >
                 <input type="hidden" name="id" value={id} />
@@ -131,7 +131,7 @@ export function TemplateCard({
                     className="inline-flex items-center gap-1.5 rounded-md border border-red-900 bg-red-700/80 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                   >
                     <Trash2 size={13} strokeWidth={2} aria-hidden />
-                    {deleting ? "Löschen …" : "Vorlage löschen"}
+                    {deleting ? "Löschen …" : "Gruppe löschen"}
                   </button>
                 </AlertDialogAction>
               </form>

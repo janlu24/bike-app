@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  createTemplateAction,
-  updateTemplateAction,
-} from "@/app/(app)/garage/templates/actions";
-import type { TemplateFormState } from "@/app/(app)/garage/templates/schema";
+  createGroupAction,
+  updateGroupAction,
+} from "@/app/(app)/garage/groups/actions";
+import type { GroupFormState } from "@/app/(app)/garage/groups/schema";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
-import { computeTemplateDiff } from "@/lib/templates/validation";
+import { computeGroupDiff } from "@/lib/groups/validation";
 import { cn } from "@/lib/utils";
 import type { ItemCategory } from "@/types/supabase";
 import { Save, X } from "lucide-react";
@@ -21,10 +21,10 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { TemplateKeyEditor } from "./TemplateKeyEditor";
+import { GroupKeyEditor } from "./GroupKeyEditor";
 
-interface TemplateFormProps {
-  templateId?: string;
+interface GroupFormProps {
+  groupId?: string;
   initialCategory?: ItemCategory;
   initialName?: string;
   originalKeys?: string[];
@@ -33,19 +33,19 @@ interface TemplateFormProps {
 
 type KeyDecision = "delete" | "keep";
 
-const initial: TemplateFormState = { data: null, fieldErrors: {} };
+const initial: GroupFormState = { data: null, fieldErrors: {} };
 
-export function TemplateForm({
-  templateId,
+export function GroupForm({
+  groupId,
   initialCategory,
   initialName,
   originalKeys = [],
   linkedItemCount = 0,
-}: TemplateFormProps) {
-  const isEdit = Boolean(templateId);
+}: GroupFormProps) {
+  const isEdit = Boolean(groupId);
   const action = isEdit
-    ? updateTemplateAction.bind(null, templateId!)
-    : createTemplateAction;
+    ? updateGroupAction.bind(null, groupId!)
+    : createGroupAction;
 
   const [state, formAction, pending] = useActionState(action, initial);
   const errors = state.fieldErrors;
@@ -80,7 +80,7 @@ export function TemplateForm({
     if (!isEdit || linkedItemCount === 0) return;
 
     const currentKeys = getCurrentKeys();
-    const d = computeTemplateDiff(originalKeys, currentKeys);
+    const d = computeGroupDiff(originalKeys, currentKeys);
     if (d.added.length === 0 && d.removed.length === 0) return;
 
     e.preventDefault();
@@ -144,6 +144,11 @@ export function TemplateForm({
               </option>
             ))}
           </select>
+          {!isEdit && (
+            <p className="text-xs text-cockpit-muted">
+              {CATEGORY_CONFIG[category].tooltip}
+            </p>
+          )}
           {isEdit && (
             <p className="text-xs text-cockpit-muted">
               Kategorie kann nach dem Anlegen nicht mehr geändert werden.
@@ -187,7 +192,7 @@ export function TemplateForm({
 
         {/* Keys */}
         <fieldset className="space-y-3 rounded-md border border-cockpit-border bg-cockpit-surface/60 p-4">
-          <TemplateKeyEditor initialKeys={originalKeys.length > 0 ? originalKeys : undefined} />
+          <GroupKeyEditor initialKeys={originalKeys.length > 0 ? originalKeys : undefined} />
           {errors.property_keys && (
             <p className="text-xs text-red-400">{errors.property_keys}</p>
           )}
@@ -211,10 +216,10 @@ export function TemplateForm({
             <Save size={16} strokeWidth={2} aria-hidden />
             {pending
               ? isEdit ? "Speichern …" : "Anlegen …"
-              : isEdit ? "Änderungen speichern" : "Vorlage anlegen"}
+              : isEdit ? "Änderungen speichern" : "Gruppe anlegen"}
           </button>
           <Link
-            href="/garage/templates"
+            href="/garage/groups"
             className="inline-flex items-center gap-2 rounded-md border border-cockpit-border px-4 py-2 text-sm text-cockpit-muted hover:text-cockpit-text"
           >
             <X size={16} strokeWidth={2} aria-hidden />
@@ -228,7 +233,7 @@ export function TemplateForm({
         <DialogContent className="max-w-md border-cockpit-border bg-cockpit-surface text-cockpit-text">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
-              Vorlage aktualisieren
+              Gruppe aktualisieren
             </DialogTitle>
             <p className="text-xs text-cockpit-muted">
               Diese Änderungen werden auf{" "}

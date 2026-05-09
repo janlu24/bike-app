@@ -5,7 +5,7 @@ import type { ItemFormState } from "@/app/(app)/garage/schema";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
 import { CATEGORIES_WITH_PARENT } from "@/lib/items/validation";
 import { cn } from "@/lib/utils";
-import type { BikeOption, ItemCategory, ItemRow, TemplateRow } from "@/types/supabase";
+import type { BikeOption, GroupRow, ItemCategory, ItemRow } from "@/types/supabase";
 import { Info, LayoutTemplate, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
@@ -13,25 +13,18 @@ import { ImageUploader } from "./ImageUploader";
 import { MetadataEditor } from "./MetadataEditor";
 import { WeightField } from "./WeightField";
 
-type TemplateSeed = Pick<TemplateRow, "id" | "name" | "category" | "property_keys">;
+type GroupSeed = Pick<GroupRow, "id" | "name" | "category" | "property_keys">;
 
 interface ItemFormProps {
   item?: ItemRow;
   bikes?: BikeOption[];
-  templates?: TemplateSeed[];
-  templateName?: string;
+  templates?: GroupSeed[];
+  groupName?: string;
 }
-
-const CATEGORY_TOOLTIPS: Record<ItemCategory, string> = {
-  Bike: "Komplette Räder – sie tragen die zugeordneten Komponenten.",
-  Part: "Komponenten: Dinge, die fest am Fahrrad verbaut sind (z. B. Bremsen, Gabel, Schaltung, fest montierte Taschen).",
-  Gear: "Equipment: Dinge, die man flexibel auf eine Tour mitnimmt (z. B. Zelt, Werkzeug, Powerbanks, Kleidung).",
-  Clothing: "Bekleidung – Trikots, Hosen, Schuhe; reist mit, gehört aber nicht ans Bike.",
-};
 
 const initial: ItemFormState = { data: null, fieldErrors: {} };
 
-export function ItemForm({ item, bikes = [], templates = [], templateName }: ItemFormProps) {
+export function ItemForm({ item, bikes = [], templates = [], groupName }: ItemFormProps) {
   const isEdit = Boolean(item);
   const action = isEdit
     ? updateItemAction.bind(null, item!.id)
@@ -46,19 +39,21 @@ export function ItemForm({ item, bikes = [], templates = [], templateName }: Ite
   const showParent = CATEGORIES_WITH_PARENT.includes(category);
   const availableBikes = bikes.filter((b) => b.id !== item?.id);
 
-  // Template selector state (create mode only).
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-  const categoryTemplates = templates.filter((t) => t.category === category);
+  // Group selector state (create mode only).
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const categoryGroups = templates.filter((t) => t.category === category);
 
   function handleCategoryChange(cat: ItemCategory) {
     setCategory(cat);
-    setSelectedTemplateId("");
+    setSelectedGroupId("");
   }
 
-  const selectedTemplate = categoryTemplates.find((t) => t.id === selectedTemplateId);
-  const templateInitialMeta: Record<string, string> | undefined = selectedTemplate
-    ? Object.fromEntries(selectedTemplate.property_keys.map((k) => [k, ""]))
+  const selectedGroup = categoryGroups.find((t) => t.id === selectedGroupId);
+  const groupInitialMeta: Record<string, string> | undefined = selectedGroup
+    ? Object.fromEntries(selectedGroup.property_keys.map((k) => [k, ""]))
     : undefined;
+
+  const categoryTooltip = CATEGORY_CONFIG[category].tooltip;
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
@@ -77,8 +72,8 @@ export function ItemForm({ item, bikes = [], templates = [], templateName }: Ite
           <span
             tabIndex={0}
             role="img"
-            aria-label={`Erklärung: ${CATEGORY_TOOLTIPS[category]}`}
-            title={CATEGORY_TOOLTIPS[category]}
+            aria-label={`Erklärung: ${categoryTooltip}`}
+            title={categoryTooltip}
             className="inline-flex cursor-help text-cockpit-muted transition-colors hover:text-petrol-400 focus:text-petrol-400 focus:outline-none"
           >
             <Info size={12} strokeWidth={1.75} aria-hidden />
@@ -98,53 +93,53 @@ export function ItemForm({ item, bikes = [], templates = [], templateName }: Ite
             </option>
           ))}
         </select>
-        <p className="text-xs text-cockpit-muted">{CATEGORY_TOOLTIPS[category]}</p>
+        <p className="text-xs text-cockpit-muted">{categoryTooltip}</p>
         {errors.category && (
           <p className="text-xs text-red-400">{errors.category}</p>
         )}
       </div>
 
-      {/* Template badge (edit mode — read-only) */}
-      {isEdit && templateName && (
+      {/* Group badge (edit mode — read-only) */}
+      {isEdit && groupName && (
         <div className="flex items-center gap-1.5 rounded-md border border-cockpit-border bg-cockpit-surface/60 px-3 py-2">
           <LayoutTemplate size={13} strokeWidth={1.75} className="shrink-0 text-petrol-400" aria-hidden />
           <span className="text-xs text-cockpit-muted">
-            Vorlage:{" "}
-            <span className="font-medium text-cockpit-text">{templateName}</span>
+            Gruppe:{" "}
+            <span className="font-medium text-cockpit-text">{groupName}</span>
           </span>
         </div>
       )}
 
-      {/* Template selector (create mode — optional) */}
-      {!isEdit && categoryTemplates.length > 0 && (
+      {/* Group selector (create mode — optional) */}
+      {!isEdit && categoryGroups.length > 0 && (
         <div className="space-y-1.5">
           <label
-            htmlFor="template_id"
+            htmlFor="group_id"
             className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-cockpit-muted"
           >
             <LayoutTemplate size={12} strokeWidth={1.75} aria-hidden />
-            Vorlage auswählen
+            Gruppe auswählen
             <span className="ml-0.5 font-normal normal-case">(optional)</span>
           </label>
           <select
-            id="template_id"
-            name="template_id"
-            value={selectedTemplateId}
-            onChange={(e) => setSelectedTemplateId(e.target.value)}
+            id="group_id"
+            name="group_id"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
             className="w-full rounded-md border border-cockpit-border bg-cockpit-surface px-3 py-2 text-sm text-cockpit-text focus:border-petrol-500 focus:outline-none"
           >
-            <option value="">— Ohne Vorlage (freie Attribute) —</option>
-            {categoryTemplates.map((tpl) => (
-              <option key={tpl.id} value={tpl.id}>
-                {tpl.name}
+            <option value="">— Ohne Gruppe (freie Attribute) —</option>
+            {categoryGroups.map((grp) => (
+              <option key={grp.id} value={grp.id}>
+                {grp.name}
               </option>
             ))}
           </select>
-          {selectedTemplate && (
+          {selectedGroup && (
             <p className="text-xs text-cockpit-muted">
               Schlüssel:{" "}
               <span className="text-cockpit-text">
-                {selectedTemplate.property_keys.join(" · ")}
+                {selectedGroup.property_keys.join(" · ")}
               </span>
             </p>
           )}
@@ -176,7 +171,7 @@ export function ItemForm({ item, bikes = [], templates = [], templateName }: Ite
           </select>
           {availableBikes.length === 0 && (
             <p className="text-xs text-cockpit-muted">
-              Du hast noch keine Bikes angelegt – lege zuerst ein Bike an, um eine Zuordnung herzustellen.
+              Du hast noch keine Bikes angelegt &ndash; lege zuerst ein Bike an, um eine Zuordnung herzustellen.
             </p>
           )}
           {errors.parent_id && (
@@ -213,9 +208,9 @@ export function ItemForm({ item, bikes = [], templates = [], templateName }: Ite
 
       <fieldset className="space-y-3 rounded-md border border-cockpit-border bg-cockpit-surface/60 p-4">
         <MetadataEditor
-          key={selectedTemplateId || "free"}
+          key={selectedGroupId || "free"}
           initial={
-            templateInitialMeta ??
+            groupInitialMeta ??
             (item?.metadata
               ? Object.fromEntries(
                   Object.entries(item.metadata as Record<string, unknown>).map(

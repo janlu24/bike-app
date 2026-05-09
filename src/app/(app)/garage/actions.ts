@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseItemInput } from "@/lib/items/validation";
-import { isValidTemplateId } from "@/lib/templates/validation";
+import { isValidGroupId } from "@/lib/groups/validation";
 import type { ItemFormState } from "./schema";
 
 const empty: ItemFormState = { data: null, fieldErrors: {} };
@@ -86,19 +86,19 @@ export async function createItemAction(
     }
   }
 
-  // Resolve optional template_id — verify it belongs to this user.
-  let template_id: string | null = null;
-  const rawTemplateId = typeof formData.get("template_id") === "string"
-    ? (formData.get("template_id") as string).trim()
+  // Resolve optional group_id — verify it belongs to this user.
+  let group_id: string | null = null;
+  const rawGroupId = typeof formData.get("group_id") === "string"
+    ? (formData.get("group_id") as string).trim()
     : "";
-  if (rawTemplateId && isValidTemplateId(rawTemplateId)) {
-    const { data: tpl } = await supabase
-      .from("item_templates")
+  if (rawGroupId && isValidGroupId(rawGroupId)) {
+    const { data: grp } = await supabase
+      .from("item_groups")
       .select("id")
-      .eq("id", rawTemplateId)
+      .eq("id", rawGroupId)
       .eq("user_id", user.id)
       .maybeSingle();
-    if (tpl) template_id = tpl.id;
+    if (grp) group_id = grp.id;
   }
 
   const { error } = await supabase.from("items").insert({
@@ -111,7 +111,7 @@ export async function createItemAction(
     metadata: parsed.data.metadata,
     image_url,
     parent_id: parsed.data.parent_id,
-    template_id,
+    group_id,
   });
 
   if (error) {

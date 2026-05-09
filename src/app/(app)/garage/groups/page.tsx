@@ -1,7 +1,7 @@
-import { TemplateCard } from "@/components/templates/TemplateCard";
+import { GroupCard } from "@/components/groups/GroupCard";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { ItemCategory, TemplateRow } from "@/types/supabase";
+import type { GroupRow, ItemCategory } from "@/types/supabase";
 import { LayoutTemplate, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,78 +9,85 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Vorlagen · Setup Registry",
+  title: "Gruppen · Setup Registry",
 };
 
-export default async function TemplatesPage() {
+export default async function GroupsPage() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const { data: rawTemplates } = await supabase
-    .from("item_templates")
+  const { data: rawGroups } = await supabase
+    .from("item_groups")
     .select("id, category, name, property_keys, created_at, updated_at, user_id")
     .eq("user_id", user.id)
     .order("category")
     .order("name");
 
-  const templates = (rawTemplates ?? []) as TemplateRow[];
+  const groups = (rawGroups ?? []) as GroupRow[];
 
-  // Count linked items per template.
-  const templateIds = templates.map((t) => t.id);
-  const countByTemplate: Record<string, number> = {};
+  // Count linked items per group.
+  const groupIds = groups.map((g) => g.id);
+  const countByGroup: Record<string, number> = {};
 
-  if (templateIds.length > 0) {
+  if (groupIds.length > 0) {
     const { data: linkedItems } = await supabase
       .from("items")
-      .select("template_id")
+      .select("group_id")
       .eq("user_id", user.id)
-      .in("template_id", templateIds);
+      .in("group_id", groupIds);
 
     for (const item of linkedItems ?? []) {
-      if (item.template_id) {
-        countByTemplate[item.template_id] =
-          (countByTemplate[item.template_id] ?? 0) + 1;
+      if (item.group_id) {
+        countByGroup[item.group_id] = (countByGroup[item.group_id] ?? 0) + 1;
       }
     }
   }
 
   const grouped = ITEM_CATEGORIES.reduce(
     (acc, cat) => {
-      acc[cat] = templates.filter((t) => t.category === cat);
+      acc[cat] = groups.filter((g) => g.category === cat);
       return acc;
     },
-    {} as Record<ItemCategory, TemplateRow[]>
+    {} as Record<ItemCategory, GroupRow[]>
   );
 
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <Link
+              href="/garage"
+              className="inline-flex items-center gap-1 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted hover:text-cockpit-text"
+            >
+              ← Zur Garage
+            </Link>
+          </div>
           <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
-            Garage · Vorlagen
+            Garage · Gruppen
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Deine <span className="text-petrol-400">Vorlagen</span>
+            Deine <span className="text-petrol-400">Gruppen</span>
           </h1>
           <p className="mt-1 text-sm text-cockpit-muted">
-            {templates.length === 0
-              ? "Noch keine Vorlagen angelegt."
-              : `${templates.length} Vorlage${templates.length === 1 ? "" : "n"}`}
+            {groups.length === 0
+              ? "Noch keine Gruppen angelegt."
+              : `${groups.length} Gruppe${groups.length === 1 ? "" : "n"}`}
           </p>
         </div>
         <Link
-          href="/garage/templates/new"
+          href="/garage/groups/new"
           className="inline-flex items-center gap-2 rounded-md border border-petrol-700 bg-petrol-600 px-3.5 py-2 text-sm font-medium text-white shadow-cockpit transition-colors hover:bg-petrol-500"
         >
           <Plus size={16} strokeWidth={2} aria-hidden />
-          Neue Vorlage
+          Neue Gruppe
         </Link>
       </header>
 
-      {templates.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-cockpit-border bg-cockpit-surface/40 py-16 text-center">
           <LayoutTemplate
             size={32}
@@ -89,24 +96,24 @@ export default async function TemplatesPage() {
             aria-hidden
           />
           <p className="text-sm font-medium text-cockpit-text">
-            Noch keine Vorlagen
+            Noch keine Gruppen
           </p>
           <p className="mt-1 max-w-xs text-xs text-cockpit-muted">
-            Erstelle eine Vorlage, um gleichartige Items mit denselben Eigenschaften vergleichbar zu machen.
+            Erstelle eine Gruppe, um gleichartige Items mit denselben Eigenschaften vergleichbar zu machen.
           </p>
           <Link
-            href="/garage/templates/new"
+            href="/garage/groups/new"
             className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-petrol-700 bg-petrol-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-petrol-500"
           >
             <Plus size={13} strokeWidth={2} aria-hidden />
-            Erste Vorlage anlegen
+            Erste Gruppe anlegen
           </Link>
         </div>
       ) : (
         <div className="space-y-8">
           {ITEM_CATEGORIES.map((cat) => {
-            const group = grouped[cat];
-            if (group.length === 0) return null;
+            const catGroups = grouped[cat];
+            if (catGroups.length === 0) return null;
             const config = CATEGORY_CONFIG[cat];
             const CatIcon = config.icon;
             return (
@@ -122,18 +129,18 @@ export default async function TemplatesPage() {
                     {config.label}
                   </h2>
                   <span className="text-[11px] text-cockpit-muted">
-                    · {group.length}
+                    · {catGroups.length}
                   </span>
                 </header>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {group.map((tpl) => (
-                    <TemplateCard
-                      key={tpl.id}
-                      id={tpl.id}
-                      name={tpl.name}
-                      category={tpl.category}
-                      keyCount={tpl.property_keys.length}
-                      linkedItemCount={countByTemplate[tpl.id] ?? 0}
+                  {catGroups.map((grp) => (
+                    <GroupCard
+                      key={grp.id}
+                      id={grp.id}
+                      name={grp.name}
+                      category={grp.category}
+                      keyCount={grp.property_keys.length}
+                      linkedItemCount={countByGroup[grp.id] ?? 0}
                     />
                   ))}
                 </div>

@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
-  parseTemplateInput,
+  parseGroupInput,
   parsePropagationDecisions,
-  computeTemplateDiff,
-  isValidTemplateId,
-} from "@/lib/templates/validation";
-import type { TemplateFormState } from "./schema";
+  computeGroupDiff,
+  isValidGroupId,
+} from "@/lib/groups/validation";
+import type { GroupFormState } from "./schema";
 
-const empty: TemplateFormState = { data: null, fieldErrors: {} };
+const empty: GroupFormState = { data: null, fieldErrors: {} };
 
 async function requireUser() {
   const supabase = await createSupabaseServerClient();
@@ -23,14 +23,14 @@ async function requireUser() {
 }
 
 // ---------------------------------------------------------------------------
-// createTemplateAction
+// createGroupAction
 // ---------------------------------------------------------------------------
 
-export async function createTemplateAction(
-  _prev: TemplateFormState,
+export async function createGroupAction(
+  _prev: GroupFormState,
   formData: FormData
-): Promise<TemplateFormState> {
-  const parsed = parseTemplateInput(formData);
+): Promise<GroupFormState> {
+  const parsed = parseGroupInput(formData);
   if (!parsed.data) return parsed;
 
   let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -41,7 +41,7 @@ export async function createTemplateAction(
     return { ...empty, error: "Sitzung abgelaufen. Bitte erneut anmelden." };
   }
 
-  const { error } = await supabase.from("item_templates").insert({
+  const { error } = await supabase.from("item_groups").insert({
     user_id: user.id,
     category: parsed.data.category,
     name: parsed.data.name,
@@ -53,31 +53,31 @@ export async function createTemplateAction(
       return {
         data: null,
         fieldErrors: {
-          name: "Eine Vorlage mit diesem Namen existiert bereits in dieser Kategorie.",
+          name: "Eine Gruppe mit diesem Namen existiert bereits in dieser Kategorie.",
         },
       };
     }
     return { ...empty, error: "Speichern fehlgeschlagen. Bitte erneut versuchen." };
   }
 
-  revalidatePath("/garage/templates");
-  redirect("/garage/templates");
+  revalidatePath("/garage/groups");
+  redirect("/garage/groups");
 }
 
 // ---------------------------------------------------------------------------
-// updateTemplateAction
+// updateGroupAction
 // ---------------------------------------------------------------------------
 
-export async function updateTemplateAction(
-  templateId: string,
-  _prev: TemplateFormState,
+export async function updateGroupAction(
+  groupId: string,
+  _prev: GroupFormState,
   formData: FormData
-): Promise<TemplateFormState> {
-  if (!isValidTemplateId(templateId)) {
-    return { ...empty, error: "Ungültige Vorlagen-ID." };
+): Promise<GroupFormState> {
+  if (!isValidGroupId(groupId)) {
+    return { ...empty, error: "Ungültige Gruppen-ID." };
   }
 
-  const parsed = parseTemplateInput(formData);
+  const parsed = parseGroupInput(formData);
   if (!parsed.data) return parsed;
 
   let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -88,28 +88,28 @@ export async function updateTemplateAction(
     return { ...empty, error: "Sitzung abgelaufen. Bitte erneut anmelden." };
   }
 
-  // Load current template to verify ownership and compute diff server-side.
+  // Load current group to verify ownership and compute diff server-side.
   const { data: existing, error: fetchError } = await supabase
-    .from("item_templates")
+    .from("item_groups")
     .select("property_keys")
-    .eq("id", templateId)
+    .eq("id", groupId)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (fetchError || !existing) {
-    return { ...empty, error: "Vorlage nicht gefunden." };
+    return { ...empty, error: "Gruppe nicht gefunden." };
   }
 
   const oldKeys: string[] = existing.property_keys ?? [];
   const newKeys = parsed.data.property_keys;
-  const { added: addedKeys, removed: removedKeys } = computeTemplateDiff(oldKeys, newKeys);
+  const { added: addedKeys, removed: removedKeys } = computeGroupDiff(oldKeys, newKeys);
   const { removedKeysDecision } = parsePropagationDecisions(formData);
 
-  // 1. Update the template itself.
+  // 1. Update the group itself.
   const { error: updateError } = await supabase
-    .from("item_templates")
+    .from("item_groups")
     .update({ name: parsed.data.name, property_keys: newKeys })
-    .eq("id", templateId)
+    .eq("id", groupId)
     .eq("user_id", user.id);
 
   if (updateError) {
@@ -117,7 +117,7 @@ export async function updateTemplateAction(
       return {
         data: null,
         fieldErrors: {
-          name: "Eine Vorlage mit diesem Namen existiert bereits in dieser Kategorie.",
+          name: "Eine Gruppe mit diesem Namen existiert bereits in dieser Kategorie.",
         },
       };
     }
@@ -129,7 +129,7 @@ export async function updateTemplateAction(
     const { data: linkedItems, error: itemsError } = await supabase
       .from("items")
       .select("id, metadata")
-      .eq("template_id", templateId)
+      .eq("group_id", groupId)
       .eq("user_id", user.id);
 
     if (!itemsError && linkedItems && linkedItems.length > 0) {
@@ -160,32 +160,32 @@ export async function updateTemplateAction(
     }
   }
 
-  revalidatePath("/garage/templates");
-  revalidatePath(`/garage/templates/${templateId}/edit`);
-  revalidatePath(`/garage/templates/${templateId}/compare`);
-  redirect("/garage/templates");
+  revalidatePath("/garage/groups");
+  revalidatePath(`/garage/groups/${groupId}/edit`);
+  revalidatePath(`/garage/groups/${groupId}/compare`);
+  redirect("/garage/groups");
 }
 
 // ---------------------------------------------------------------------------
-// deleteTemplateAction
+// deleteGroupAction
 // ---------------------------------------------------------------------------
 
-export async function deleteTemplateAction(formData: FormData): Promise<void> {
+export async function deleteGroupAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
-  if (!id || !isValidTemplateId(id)) {
-    revalidatePath("/garage/templates");
-    redirect("/garage/templates");
+  if (!id || !isValidGroupId(id)) {
+    revalidatePath("/garage/groups");
+    redirect("/garage/groups");
   }
 
   const { supabase, user } = await requireUser();
 
   // ON DELETE SET NULL in the migration handles unlinking items automatically.
   await supabase
-    .from("item_templates")
+    .from("item_groups")
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
 
   revalidatePath("/", "layout");
-  redirect("/garage/templates");
+  redirect("/garage/groups");
 }

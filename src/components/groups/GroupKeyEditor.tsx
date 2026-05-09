@@ -9,7 +9,7 @@ interface KeyRow {
   value: string;
 }
 
-interface TemplateKeyEditorProps {
+interface GroupKeyEditorProps {
   initialKeys?: string[];
 }
 
@@ -24,7 +24,7 @@ function seedRows(initial?: string[]): KeyRow[] {
   return initial.map((k) => ({ id: makeId(), value: k }));
 }
 
-export function TemplateKeyEditor({ initialKeys }: TemplateKeyEditorProps) {
+export function GroupKeyEditor({ initialKeys }: GroupKeyEditorProps) {
   const [rows, setRows] = useState<KeyRow[]>(() => seedRows(initialKeys));
 
   function addRow() {

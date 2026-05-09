@@ -1,17 +1,17 @@
 import type { ItemCategory } from "@/types/supabase";
 import { isItemCategory } from "@/lib/items/categories";
 
-export interface TemplateInput {
+export interface GroupInput {
   category: ItemCategory;
   name: string;
   property_keys: string[];
 }
 
-export type TemplateFieldError = "category" | "name" | "property_keys";
+export type GroupFieldError = "category" | "name" | "property_keys";
 
-export interface TemplateValidationResult {
-  data: TemplateInput | null;
-  fieldErrors: Partial<Record<TemplateFieldError, string>>;
+export interface GroupValidationResult {
+  data: GroupInput | null;
+  fieldErrors: Partial<Record<GroupFieldError, string>>;
 }
 
 export type KeyDecision = "delete" | "keep";
@@ -29,8 +29,8 @@ function sanitize(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function parseTemplateInput(formData: FormData): TemplateValidationResult {
-  const fieldErrors: TemplateValidationResult["fieldErrors"] = {};
+export function parseGroupInput(formData: FormData): GroupValidationResult {
+  const fieldErrors: GroupValidationResult["fieldErrors"] = {};
 
   const rawCategory = sanitize(formData.get("category"));
   const name = sanitize(formData.get("name"));
@@ -90,11 +90,11 @@ export function parsePropagationDecisions(formData: FormData): PropagationDecisi
   return { removedKeysDecision };
 }
 
-export function isValidTemplateId(value: string): boolean {
+export function isValidGroupId(value: string): boolean {
   return UUID_RE.test(value);
 }
 
-export function computeTemplateDiff(
+export function computeGroupDiff(
   oldKeys: string[],
   newKeys: string[]
 ): { added: string[]; removed: string[] } {
