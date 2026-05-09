@@ -1,6 +1,6 @@
 # PROJ-11: Tour Management & Packliste
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-05-09
 **Last Updated:** 2026-05-09
 
@@ -192,7 +192,31 @@ Pattern identisch zur bestehenden Garage-Implementierung:
 Keine neuen Pakete erforderlich. Alle UI-Primitive sind bereits installiert (Sheet, Dialog, Badge, Button, Input, Select, Form, Switch). `Map`-Icon aus lucide-react (bereits installiert) für den Bottom-Nav.
 
 ## Implementation Notes
-_To be added by /frontend and /backend_
+
+### Backend (2026-05-09)
+
+**Migration:** `supabase/migrations/0009_tours.sql`
+- New ENUM `tour_status` (`planned` | `completed`)
+- New table `tours` with all raw data fields, DB-level CHECK constraints for non-negative values and valid ranges, `external_source`/`external_id` columns for future Komoot/Strava import (nullable, no UI)
+- New junction table `tour_items` with UNIQUE(tour_id, item_id), CASCADE deletes on both FKs
+- RLS on both tables: `tours` — owner or `is_public = true`; `tour_items` — owner only for writes, owner or public tour for reads
+- Indexes: `tours(user_id)`, `tours(date DESC)`, `tours(is_public)`, `tour_items(tour_id)`, `tour_items(item_id)`
+
+**Validation lib:** `src/lib/tours/validation.ts`
+- `parseTourInput(formData)` — validates all fields, returns `TourValidationResult`
+- `isValidTourId(value)` — UUID format check
+
+**Schema:** `src/app/(app)/tours/schema.ts`
+- `TourFormState = TourValidationResult & { error?: string }`
+
+**Server Actions:** `src/app/(app)/tours/actions.ts`
+- `createTourAction(prev, formData)` — inserts tour, redirects to `/tours/[id]`
+- `updateTourAction(tourId, prev, formData)` — updates tour (owner-only), redirects to `/tours/[id]`
+- `deleteTourAction(formData)` — deletes tour (CASCADE removes tour_items), redirects to `/tours`
+- `addTourItemAction(tourId, itemId)` — adds item to packlist; 23505 duplicate handled
+- `removeTourItemAction(tourId, itemId)` — removes item from packlist; explicit ownership check before delete
+
+**⚠️ Action required:** Run `supabase db push` to apply migration, then `supabase gen types typescript --local > src/types/supabase.ts` to update TypeScript types before building.
 
 ## QA Test Results
 _To be added by /qa_
