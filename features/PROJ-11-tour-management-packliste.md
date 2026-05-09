@@ -1,6 +1,6 @@
 # PROJ-11: Tour Management & Packliste
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-05-09
 **Last Updated:** 2026-05-09
 
@@ -90,7 +90,106 @@
 ---
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### A) Seitenstruktur (Komponenten-Baum)
+
+```
+Bottom Nav (erweitert: +Touren-Tab, Icon: Map aus lucide-react)
+
+/tours                              — Tour-Übersicht (Server Component)
++-- TourList
+|   +-- TourCard                    — Name, Datum, Status-Badge, km, Item-Anzahl
+|   +-- EmptyState                  — "Erste Tour anlegen" CTA
++-- NewTourButton → /tours/new
+
+/tours/new                          — Neue Tour erstellen (Client Component)
++-- TourForm (react-hook-form + Zod)
+    +-- Pflichtfeld: Name
+    +-- Optionale Felder: Datum, Start, Ziel, Status-Select
+    +-- Sektion "Geplant": km, Höhenmeter ↑, Höhenmeter ↓
+    +-- Sektion "Gefahren": km, Höhenmeter ↑, Höhenmeter ↓, Dauer (Stunden + Minuten)
+    +-- Toggle: Öffentlich (mit Hinweistext zu Standortdaten)
+
+/tours/[id]                         — Tour-Detailseite (Server Component)
++-- TourHeader                      — Name, Datum, Edit/Delete-Buttons
++-- TourStatusBadge                 — "Geplant" | "Gefahren"
++-- TourStatsGrid                   — Rohdaten in 2 Spalten (Geplant vs. Gefahren)
++-- TourPacklist
+|   +-- PacklistWeightTotal         — Summe aller Gewichte (on-the-fly)
+|   +-- PacklistItem[]              — Name, Kategorie, Gewicht, Bild, Remove-Button
+|   +-- AddItemButton               — öffnet ItemPickerSheet
++-- ItemPickerSheet (Client)        — durchsuchbare/filterbare Garage-Items
+    +-- Ergebnis-Liste mit Checkbox-Auswahl
+
+/tours/[id]/edit                    — Tour bearbeiten (TourForm, vorausgefüllt)
+```
+
+### B) Datenmodell
+
+**Neue Tabelle: `tours`**
+
+| Spalte | Typ | Beschreibung |
+|--------|-----|--------------|
+| `id` | UUID PK | Auto-generiert |
+| `user_id` | UUID FK → profiles | Besitzer; ON DELETE CASCADE |
+| `name` | TEXT (≤100) | Pflichtfeld |
+| `date` | DATE | Optional |
+| `start_location` | TEXT (≤200) | Optional |
+| `destination` | TEXT (≤200) | Optional |
+| `status` | ENUM `tour_status` | `planned` \| `completed`, default `planned` |
+| `planned_distance_km` | DECIMAL | Optional, ≥ 0 |
+| `planned_elevation_up_m` | INTEGER | Optional, ≥ 0 |
+| `planned_elevation_down_m` | INTEGER | Optional, ≥ 0 |
+| `actual_distance_km` | DECIMAL | Optional, ≥ 0 |
+| `actual_elevation_up_m` | INTEGER | Optional, ≥ 0 |
+| `actual_elevation_down_m` | INTEGER | Optional, ≥ 0 |
+| `duration_hours` | INTEGER | Optional, ≥ 0 |
+| `duration_minutes` | INTEGER | Optional, 0–59 |
+| `is_public` | BOOLEAN | Default `false` |
+| `external_source` | TEXT | Nullable — "komoot" \| "strava" (Phase 2, kein UI) |
+| `external_id` | TEXT | Nullable — ID aus externer App (Phase 2, kein UI) |
+| `created_at` | TIMESTAMPTZ | Auto |
+| `updated_at` | TIMESTAMPTZ | Auto (via Trigger) |
+
+**Neue Tabelle: `tour_items`** (Packliste — Junction Table)
+
+| Spalte | Typ | Beschreibung |
+|--------|-----|--------------|
+| `id` | UUID PK | Auto-generiert |
+| `tour_id` | UUID FK → tours | ON DELETE CASCADE |
+| `item_id` | UUID FK → items | ON DELETE CASCADE |
+| `added_at` | TIMESTAMPTZ | Auto |
+| UNIQUE(tour_id, item_id) | | Kein Item doppelt in einer Tour |
+
+**Sicherheit (RLS):**
+- `tours` SELECT: Eigene Touren (`user_id = auth.uid()`) ODER `is_public = true`
+- `tours` INSERT/UPDATE/DELETE: Nur Besitzer (`user_id = auth.uid()`)
+- `tour_items` SELECT: Besitzer der zugehörigen Tour ODER Tour ist öffentlich
+- `tour_items` INSERT/DELETE: Nur wer die Tour besitzt
+
+**Datenbankindizes:**
+- `tours(user_id)`, `tours(date DESC)`, `tours(is_public)`
+- `tour_items(tour_id)`, `tour_items(item_id)`
+
+### C) API & Tech-Strategie
+
+Pattern identisch zur bestehenden Garage-Implementierung:
+- Server Actions in `src/app/(app)/tours/actions.ts`
+- Zod-Schemas in `src/app/(app)/tours/schema.ts`
+- Supabase generierte Types aus `src/types/supabase.ts`
+
+**Datenfluss:**
+1. Tour-Übersicht: Server Component lädt Touren via Supabase, sortiert nach `date DESC`
+2. Tour erstellen/bearbeiten: `TourForm` (Client, react-hook-form + Zod) → Server Action → Redirect zur Detailseite
+3. Item hinzufügen zur Packliste: `ItemPickerSheet` (Client) → Server Action `addTourItem` → `revalidatePath`
+4. Gesamtgewicht: Summiert im Server Component beim Laden; kein gecachter Wert in der DB
+5. Tour löschen: Server Action mit Bestätigungsdialog → CASCADE löscht `tour_items`
+
+**PII-Umgang:** Start-/Zielort können Standortbezug haben. Toggle "Öffentlich" im Formular zeigt Hinweis: "Start, Ziel und alle Tourdaten werden für andere Nutzer sichtbar."
+
+### D) Neue Pakete
+
+Keine neuen Pakete erforderlich. Alle UI-Primitive sind bereits installiert (Sheet, Dialog, Badge, Button, Input, Select, Form, Switch). `Map`-Icon aus lucide-react (bereits installiert) für den Bottom-Nav.
 
 ## Implementation Notes
 _To be added by /frontend and /backend_
