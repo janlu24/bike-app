@@ -72,26 +72,61 @@ describe("parseTourInput — name", () => {
 // ---------------------------------------------------------------------------
 // parseTourInput — date
 // ---------------------------------------------------------------------------
-describe("parseTourInput — date", () => {
-  it("accepts empty date (optional)", () => {
-    const fd = makeFormData({ ...BASE_VALID, date: "" });
+describe("parseTourInput — start_date / end_date", () => {
+  it("accepts empty start_date (optional)", () => {
+    const fd = makeFormData({ ...BASE_VALID, start_date: "" });
     const result = parseTourInput(fd);
-    expect(result.fieldErrors.date).toBeUndefined();
-    expect(result.data?.date).toBeNull();
+    expect(result.fieldErrors.start_date).toBeUndefined();
+    expect(result.data?.start_date).toBeNull();
   });
 
-  it("accepts valid ISO date", () => {
-    const fd = makeFormData({ ...BASE_VALID, date: "2026-05-10" });
+  it("accepts valid ISO start_date", () => {
+    const fd = makeFormData({ ...BASE_VALID, start_date: "2026-05-10" });
     const result = parseTourInput(fd);
-    expect(result.fieldErrors.date).toBeUndefined();
-    expect(result.data?.date).toBe("2026-05-10");
+    expect(result.fieldErrors.start_date).toBeUndefined();
+    expect(result.data?.start_date).toBe("2026-05-10");
   });
 
-  it("returns fieldError for invalid date format", () => {
-    const fd = makeFormData({ ...BASE_VALID, date: "10.05.2026" });
+  it("returns fieldError for invalid start_date format", () => {
+    const fd = makeFormData({ ...BASE_VALID, start_date: "10.05.2026" });
     const result = parseTourInput(fd);
     expect(result.data).toBeNull();
-    expect(result.fieldErrors.date).toBeTruthy();
+    expect(result.fieldErrors.start_date).toBeTruthy();
+  });
+
+  it("accepts empty end_date (optional)", () => {
+    const fd = makeFormData({ ...BASE_VALID, end_date: "" });
+    const result = parseTourInput(fd);
+    expect(result.fieldErrors.end_date).toBeUndefined();
+    expect(result.data?.end_date).toBeNull();
+  });
+
+  it("accepts end_date equal to start_date (same-day tour)", () => {
+    const fd = makeFormData({ ...BASE_VALID, start_date: "2026-05-10", end_date: "2026-05-10" });
+    const result = parseTourInput(fd);
+    expect(result.fieldErrors.end_date).toBeUndefined();
+    expect(result.data?.end_date).toBe("2026-05-10");
+  });
+
+  it("accepts end_date after start_date (multi-day tour)", () => {
+    const fd = makeFormData({ ...BASE_VALID, start_date: "2026-05-10", end_date: "2026-05-12" });
+    const result = parseTourInput(fd);
+    expect(result.fieldErrors.end_date).toBeUndefined();
+    expect(result.data?.end_date).toBe("2026-05-12");
+  });
+
+  it("returns fieldError when end_date is before start_date", () => {
+    const fd = makeFormData({ ...BASE_VALID, start_date: "2026-05-10", end_date: "2026-05-09" });
+    const result = parseTourInput(fd);
+    expect(result.data).toBeNull();
+    expect(result.fieldErrors.end_date).toBeTruthy();
+  });
+
+  it("accepts end_date without start_date", () => {
+    const fd = makeFormData({ ...BASE_VALID, end_date: "2026-05-10" });
+    const result = parseTourInput(fd);
+    expect(result.fieldErrors.end_date).toBeUndefined();
+    expect(result.data?.end_date).toBe("2026-05-10");
   });
 });
 
@@ -246,7 +281,8 @@ describe("parseTourInput — full valid form", () => {
   it("returns complete TourInput for a fully filled form", () => {
     const fd = makeFormData({
       name: "Albaufstieg",
-      date: "2026-06-15",
+      start_date: "2026-06-15",
+      end_date: "2026-06-17",
       start_location: "Reutlingen",
       destination: "Albstadt",
       status: "completed",
@@ -264,7 +300,8 @@ describe("parseTourInput — full valid form", () => {
     expect(result.fieldErrors).toEqual({});
     expect(result.data).toEqual({
       name: "Albaufstieg",
-      date: "2026-06-15",
+      start_date: "2026-06-15",
+      end_date: "2026-06-17",
       start_location: "Reutlingen",
       destination: "Albstadt",
       status: "completed",
@@ -285,7 +322,8 @@ describe("parseTourInput — full valid form", () => {
     const result = parseTourInput(fd);
     expect(result.data).not.toBeNull();
     expect(result.data?.name).toBe("Minimaltour");
-    expect(result.data?.date).toBeNull();
+    expect(result.data?.start_date).toBeNull();
+    expect(result.data?.end_date).toBeNull();
     expect(result.data?.planned_distance_km).toBeNull();
     expect(result.data?.is_public).toBe(false);
   });

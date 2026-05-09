@@ -225,10 +225,10 @@ export type Database = {
           actual_elevation_down_m: number | null
           actual_elevation_up_m: number | null
           created_at: string
-          date: string | null
           destination: string | null
           duration_hours: number | null
           duration_minutes: number | null
+          end_date: string | null
           external_id: string | null
           external_source: string | null
           id: string
@@ -237,6 +237,7 @@ export type Database = {
           planned_distance_km: number | null
           planned_elevation_down_m: number | null
           planned_elevation_up_m: number | null
+          start_date: string | null
           start_location: string | null
           status: Database["public"]["Enums"]["tour_status"]
           updated_at: string
@@ -247,10 +248,10 @@ export type Database = {
           actual_elevation_down_m?: number | null
           actual_elevation_up_m?: number | null
           created_at?: string
-          date?: string | null
           destination?: string | null
           duration_hours?: number | null
           duration_minutes?: number | null
+          end_date?: string | null
           external_id?: string | null
           external_source?: string | null
           id?: string
@@ -259,6 +260,7 @@ export type Database = {
           planned_distance_km?: number | null
           planned_elevation_down_m?: number | null
           planned_elevation_up_m?: number | null
+          start_date?: string | null
           start_location?: string | null
           status?: Database["public"]["Enums"]["tour_status"]
           updated_at?: string
@@ -269,10 +271,10 @@ export type Database = {
           actual_elevation_down_m?: number | null
           actual_elevation_up_m?: number | null
           created_at?: string
-          date?: string | null
           destination?: string | null
           duration_hours?: number | null
           duration_minutes?: number | null
+          end_date?: string | null
           external_id?: string | null
           external_source?: string | null
           id?: string
@@ -281,6 +283,7 @@ export type Database = {
           planned_distance_km?: number | null
           planned_elevation_down_m?: number | null
           planned_elevation_up_m?: number | null
+          start_date?: string | null
           start_location?: string | null
           status?: Database["public"]["Enums"]["tour_status"]
           updated_at?: string

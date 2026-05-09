@@ -11,7 +11,8 @@ export type TourStatus = "planned" | "completed";
 
 export interface TourInput {
   name: string;
-  date: string | null;
+  start_date: string | null;
+  end_date: string | null;
   start_location: string | null;
   destination: string | null;
   status: TourStatus;
@@ -28,7 +29,8 @@ export interface TourInput {
 
 export type TourFieldError =
   | "name"
-  | "date"
+  | "start_date"
+  | "end_date"
   | "start_location"
   | "destination"
   | "status"
@@ -73,11 +75,18 @@ function parseOptionalNonnegInt(
   return { value: n };
 }
 
+function parseOptionalDate(raw: string): { value: string | null; error?: string } {
+  if (raw === "") return { value: null };
+  if (!DATE_RE.test(raw)) return { value: null, error: "Ungültiges Datum (YYYY-MM-DD)." };
+  return { value: raw };
+}
+
 export function parseTourInput(formData: FormData): TourValidationResult {
   const fieldErrors: TourValidationResult["fieldErrors"] = {};
 
   const name = sanitize(formData.get("name"));
-  const rawDate = sanitize(formData.get("date"));
+  const rawStartDate = sanitize(formData.get("start_date"));
+  const rawEndDate = sanitize(formData.get("end_date"));
   const startLocation = sanitize(formData.get("start_location")) || null;
   const destination = sanitize(formData.get("destination")) || null;
   const rawStatus = sanitize(formData.get("status"));
@@ -90,14 +99,23 @@ export function parseTourInput(formData: FormData): TourValidationResult {
     fieldErrors.name = `Höchstens ${MAX_NAME} Zeichen.`;
   }
 
-  // date
-  let date: string | null = null;
-  if (rawDate !== "") {
-    if (!DATE_RE.test(rawDate)) {
-      fieldErrors.date = "Ungültiges Datum (YYYY-MM-DD).";
-    } else {
-      date = rawDate;
-    }
+  // start_date
+  const startDateResult = parseOptionalDate(rawStartDate);
+  if (startDateResult.error) fieldErrors.start_date = startDateResult.error;
+
+  // end_date
+  const endDateResult = parseOptionalDate(rawEndDate);
+  if (endDateResult.error) fieldErrors.end_date = endDateResult.error;
+
+  // cross-validation: end_date must be >= start_date
+  if (
+    !startDateResult.error &&
+    !endDateResult.error &&
+    startDateResult.value &&
+    endDateResult.value &&
+    endDateResult.value < startDateResult.value
+  ) {
+    fieldErrors.end_date = "Enddatum darf nicht vor dem Startdatum liegen.";
   }
 
   // locations
@@ -148,7 +166,8 @@ export function parseTourInput(formData: FormData): TourValidationResult {
   return {
     data: {
       name,
-      date,
+      start_date: startDateResult.value,
+      end_date: endDateResult.value,
       start_location: startLocation,
       destination,
       status,

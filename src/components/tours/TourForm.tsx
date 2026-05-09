@@ -53,20 +53,37 @@ export function TourForm({ action, initialData, submitLabel = "Speichern" }: Tou
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="date">Datum</Label>
+            <Label htmlFor="start_date">Startdatum</Label>
             <Input
-              id="date"
-              name="date"
+              id="start_date"
+              name="start_date"
               type="date"
-              defaultValue={initialData?.date ?? ""}
-              aria-describedby={state.fieldErrors.date ? "date-error" : undefined}
-              aria-invalid={!!state.fieldErrors.date}
+              defaultValue={initialData?.start_date ?? ""}
+              aria-describedby={state.fieldErrors.start_date ? "start-date-error" : undefined}
+              aria-invalid={!!state.fieldErrors.start_date}
             />
-            {state.fieldErrors.date && (
-              <p id="date-error" role="alert" className="text-xs text-red-400">{state.fieldErrors.date}</p>
+            {state.fieldErrors.start_date && (
+              <p id="start-date-error" role="alert" className="text-xs text-red-400">{state.fieldErrors.start_date}</p>
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="end_date">Enddatum</Label>
+            <Input
+              id="end_date"
+              name="end_date"
+              type="date"
+              defaultValue={initialData?.end_date ?? ""}
+              aria-describedby={state.fieldErrors.end_date ? "end-date-error" : undefined}
+              aria-invalid={!!state.fieldErrors.end_date}
+            />
+            {state.fieldErrors.end_date && (
+              <p id="end-date-error" role="alert" className="text-xs text-red-400">{state.fieldErrors.end_date}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="status">Status</Label>
             <Select name="status" defaultValue={initialData?.status ?? "planned"}>

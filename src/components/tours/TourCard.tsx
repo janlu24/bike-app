@@ -19,7 +19,9 @@ export function TourCard({ tour, itemCount }: TourCardProps) {
         <header className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-widest text-cockpit-muted">
-              {formatTourDate(tour.date)}
+              {tour.end_date && tour.end_date !== tour.start_date
+                ? `${formatTourDate(tour.start_date)} – ${formatTourDate(tour.end_date)}`
+                : formatTourDate(tour.start_date)}
             </p>
             <h3 className="mt-0.5 truncate text-sm font-semibold text-cockpit-text leading-snug">
               {tour.name}

@@ -57,6 +57,27 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     item: ti.items as unknown as ItemRow,
   }));
 
+  // Load child items (garage items whose parent_id is one of the packlist items).
+  // These are automatically "included" in the tour weight — not explicitly added.
+  const packlistItemIds = packlistEntries.map((e) => e.item.id);
+  let childItemMap: Map<string, ItemRow[]> = new Map();
+  if (packlistItemIds.length > 0) {
+    const { data: childItems } = await supabase
+      .from("items")
+      .select("*")
+      .in("parent_id", packlistItemIds)
+      .eq("user_id", tour.user_id)
+      .order("category")
+      .order("brand");
+    for (const child of childItems ?? []) {
+      if (child.parent_id) {
+        const siblings = childItemMap.get(child.parent_id) ?? [];
+        siblings.push(child as ItemRow);
+        childItemMap.set(child.parent_id, siblings);
+      }
+    }
+  }
+
   // Load all garage items for the item picker (only for owner).
   const garageItems: ItemRow[] = isOwner
     ? ((
@@ -71,13 +92,18 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
   const tourRow = tour as TourRow;
 
+  const dateLabel =
+    tourRow.end_date && tourRow.end_date !== tourRow.start_date
+      ? `${formatTourDate(tourRow.start_date)} – ${formatTourDate(tourRow.end_date)}`
+      : formatTourDate(tourRow.start_date);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
-            {formatTourDate(tourRow.date)}
+            {dateLabel}
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-semibold tracking-tight text-cockpit-text">
@@ -146,6 +172,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
       <TourPacklist
         tourId={id}
         entries={packlistEntries}
+        childItemMap={childItemMap}
         garageItems={garageItems}
         isOwner={isOwner}
       />

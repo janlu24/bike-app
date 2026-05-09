@@ -41,7 +41,8 @@ export async function createTourAction(
     .insert({
       user_id: user.id,
       name: parsed.data.name,
-      date: parsed.data.date,
+      start_date: parsed.data.start_date,
+      end_date: parsed.data.end_date,
       start_location: parsed.data.start_location,
       destination: parsed.data.destination,
       status: parsed.data.status,
@@ -90,7 +91,8 @@ export async function updateTourAction(
     .from("tours")
     .update({
       name: parsed.data.name,
-      date: parsed.data.date,
+      start_date: parsed.data.start_date,
+      end_date: parsed.data.end_date,
       start_location: parsed.data.start_location,
       destination: parsed.data.destination,
       status: parsed.data.status,
