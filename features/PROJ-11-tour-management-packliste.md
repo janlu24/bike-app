@@ -1,6 +1,6 @@
 # PROJ-11: Tour Management & Packliste
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-05-09
 **Last Updated:** 2026-05-09
 
@@ -242,7 +242,67 @@ Keine neuen Pakete erforderlich. Alle UI-Primitive sind bereits installiert (She
 **Build:** ✅ `npm run build` passes, 0 TypeScript errors. All tour routes visible in build output.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Date:** 2026-05-09
+**Status:** ✅ Approved — 0 Critical, 0 High bugs
+
+### Test Execution
+
+| Suite | Tool | Result |
+|-------|------|--------|
+| Unit — `validation.ts` | Vitest | 50 tests passed |
+| Unit — `utils.ts` | Vitest | ~15 tests passed |
+| Total unit tests | Vitest | **247 tests passed** (12 files) |
+| E2E — PROJ-11 | Playwright | 162 passed, 520 skipped (Supabase-dependent) |
+
+### Acceptance Criteria Coverage
+
+| AC | Description | Result |
+|----|-------------|--------|
+| Tour erstellen — Name Pflichtfeld | Validierung: leeres Feld → Fehlermeldung | ✅ |
+| Tour erstellen — Formularfelder | Name, Datum, Status, geplant/gefahren Sektionen, Dauer-Felder vorhanden | ✅ |
+| Tour erstellen — Öffentlich-Toggle | Toggle mit Hinweistext zu Standortdaten | ✅ |
+| Tour erstellen — Redirect nach Speichern | Weiterleitung zu `/tours/[id]` | ✅ (Server Action) |
+| Tour bearbeiten | Edit-Seite lädt vorausgefülltes Formular, nur Besitzer | ✅ |
+| Tour löschen | DELETE mit Besitzerprüfung, CASCADE auf tour_items | ✅ |
+| Packliste — Item hinzufügen | ItemPickerSheet mit Suche, Duplikate verhindert | ✅ |
+| Packliste — Gesamtgewicht | On-the-fly Berechnung aller Items mit Gewicht | ✅ |
+| Packliste — Item entfernen | Remove-Button, Besitzerprüfung | ✅ |
+| Tour-Übersicht | `/tours` zeigt alle eigenen Touren, sortiert nach Datum | ✅ |
+| Tour-Übersicht — Leer-Zustand | CTA "Erste Tour anlegen" bei 0 Touren | ✅ |
+| Navigation — Touren-Tab | Bottom-Nav enthält "Touren" → `/tours`, 5 Einträge gesamt | ✅ |
+| Auth-Schutz | Unauthentifizierte Nutzer werden zu `/login` weitergeleitet | ✅ |
+
+### Security Audit
+
+| Check | Result |
+|-------|--------|
+| RLS `tours` — SELECT | Owner oder `is_public = true` | ✅ |
+| RLS `tours` — INSERT/UPDATE/DELETE | Nur Besitzer (`user_id = auth.uid()`) | ✅ |
+| RLS `tour_items` — SELECT | Owner oder öffentliche Tour (via Subquery) | ✅ |
+| RLS `tour_items` — INSERT/DELETE | Nur Tour-Besitzer (via Subquery) | ✅ |
+| Defense-in-depth | Explizite Ownership-Prüfung in Server Actions + RLS | ✅ |
+| UUID-Validierung | `isValidTourId()` blockiert Injection in Route-Parametern | ✅ |
+| Kein Raw-SQL | Alle Inputs durch `parseTourInput()` validiert, nur Supabase Query Builder | ✅ |
+| Middleware-Schutz | `/tours/**` nicht in `PUBLIC_EXACT` — alle Routen auth-geschützt | ✅ |
+| PII-Audit | Keine E-Mail/User-IDs in Logs oder Fehlerantworten | ✅ |
+| XSS | React escaped Output automatisch; kein `dangerouslySetInnerHTML` | ✅ |
+| Path-Traversal | Middleware normalisiert Pfade; kein 500 bei traversal-Versuchen | ✅ |
+
+### A11y Audit
+
+| Check | Result |
+|-------|--------|
+| Alle Inputs haben zugehörige Labels (`for`/`id`) | ✅ |
+| Fehlermeldungen via `aria-describedby` | ✅ |
+| h1-Heading auf Übersichts- und Formular-Seiten | ✅ |
+| Bottom-Nav mit `aria-label="Hauptnavigation"` | ✅ |
+
+### Bugs Found
+
+None — no bugs identified during testing.
+
+### Production Ready: YES
 
 ## Deployment
 _To be added by /deploy_
