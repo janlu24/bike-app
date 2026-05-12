@@ -1,38 +1,32 @@
 # Frontend Implementation Checklist
 
-Before marking frontend as complete:
+## UI Standards & shadcn/ui
+- [ ] **shadcn First:** Checked `src/components/ui/` for EVERY component needed.
+- [ ] **No Duplicates:** No custom versions of primitives (Button, Input, etc.) created.
+- [ ] **Composition:** Custom components are composed of shadcn primitives.
+- [ ] **Tailwind Only:** No inline styles or CSS modules used.
 
-## shadcn/ui
-- [ ] Checked shadcn/ui for EVERY UI component needed
-- [ ] No custom duplicates of shadcn components created
-- [ ] Missing shadcn components installed via `npx shadcn@latest add`
+## Type Safety & Data
+- [ ] **Supabase Types:** Used generated types strictly from the root `src/types/supabase.ts` (Zero any policy).
+- [ ] **Validation:** Zod schemas implemented for all client-side forms to match backend.
+- [ ] **States:** Loading (skeletons), Error (user-friendly), and Empty states implemented.
 
-## Existing Code
-- [ ] Checked existing project components via `git ls-files src/components/`
-- [ ] Reused existing components where possible
+## Security & Privacy (PII)
+- [ ] **No PII Leaks:** Verified no sensitive data (Emails, Tokens) is logged to console.
+- [ ] **URL Safety:** No PII or sensitive internal IDs exposed in client-side URLs.
+- [ ] **XSS Protection:** All user-generated content is properly sanitized/escaped.
 
-## Design
-- [ ] Design preferences clarified with user (if no mockups)
-- [ ] Component architecture from Solution Architect followed
+## Quality & Accessibility
+- [ ] **Responsive:** Verified on Mobile (375px), Tablet (768px), and Desktop (1440px).
+- [ ] **A11y:** Semantic HTML used, ARIA labels present, and keyboard navigation works.
+- [ ] **Build:** `npm run build` passes without TypeScript or Linting errors.
 
-## Implementation
-- [ ] All planned components implemented
-- [ ] All components use Tailwind CSS (no inline styles, no CSS modules)
-- [ ] Loading states implemented (spinner/skeleton during data fetches)
-- [ ] Error states implemented (user-friendly error messages)
-- [ ] Empty states implemented ("No data yet" messages)
+## Process & Verification (Write-Then-Verify)
+- [ ] **Implementation Notes:** Added notes to the feature spec documenting component structure.
+- [ ] **Verify Edits:** Re-read modified files to ensure syntax and imports are correct.
+- [ ] **Status:** `features/INDEX.md` status updated to 'In Review' (if backend is ready) or 'In Progress'.
+- [ ] **Git:** Committed with `feat(PROJ-X): description`.
 
-## Quality
-- [ ] Responsive: Mobile (375px), Tablet (768px), Desktop (1440px)
-- [ ] Accessibility: Semantic HTML, ARIA labels, keyboard navigation
-- [ ] TypeScript: No errors (`npm run build` passes)
-- [ ] ESLint: No warnings (`npm run lint`)
-
-## Verification (run before marking complete)
-- [ ] `npm run build` passes without errors
-- [ ] All acceptance criteria from feature spec addressed in UI
-- [ ] `features/INDEX.md` status updated to "In Progress"
-
-## Completion
-- [ ] User has reviewed and approved the UI in browser
-- [ ] Code committed to git
+## Legacy Reference
+- [ ] **Legacy Isolation:** Verified that no code was written to src/alt_bike software/.
+- [ ] **Logic Migration:** Existing logic from legacy components was correctly adapted to the new architecture.

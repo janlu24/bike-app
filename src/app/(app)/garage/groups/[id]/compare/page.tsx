@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -81,12 +81,21 @@ export default async function CompareGroupPage({ params }: ComparePageProps) {
           <p className="text-sm text-cockpit-muted">
             Mindestens 2 verknüpfte Items nötig für den Vergleich.
           </p>
-          <Link
-            href={`/garage/groups/${id}/edit`}
-            className="mt-4 inline-block text-xs text-petrol-400 hover:underline"
-          >
-            Gruppe bearbeiten
-          </Link>
+          <div className="mt-4 flex justify-center gap-3">
+            <Link
+              href={`/garage/new?groupId=${id}`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-petrol-700 bg-petrol-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-petrol-500"
+            >
+              <Plus size={13} strokeWidth={2} aria-hidden />
+              Item hinzufügen
+            </Link>
+            <Link
+              href={`/garage/groups/${id}/edit`}
+              className="inline-block text-xs text-petrol-400 hover:underline"
+            >
+              Gruppe bearbeiten
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -100,19 +109,30 @@ export default async function CompareGroupPage({ params }: ComparePageProps) {
   return (
     <div className="space-y-5">
       <div>
-        <BackLinks id={id} />
-        <div className="mt-3 flex items-center gap-2">
-          <CatIcon size={14} strokeWidth={1.75} className="text-petrol-400" aria-hidden />
-          <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
-            {config.label} · Vergleich
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <BackLinks id={id} />
+            <div className="mt-3 flex items-center gap-2">
+              <CatIcon size={14} strokeWidth={1.75} className="text-petrol-400" aria-hidden />
+              <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
+                {config.label} · Vergleich
+              </p>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              <span className="text-petrol-400">{group.name}</span>
+            </h1>
+            <p className="mt-1 text-sm text-cockpit-muted">
+              {items.length} Items verglichen · {group.property_keys.length} Eigenschaften
+            </p>
+          </div>
+          <Link
+            href={`/garage/new?groupId=${id}`}
+            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-petrol-700 bg-petrol-600 px-3.5 py-2 text-sm font-medium text-white shadow-cockpit transition-colors hover:bg-petrol-500"
+          >
+            <Plus size={15} strokeWidth={2} aria-hidden />
+            Item hinzufügen
+          </Link>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          <span className="text-petrol-400">{group.name}</span>
-        </h1>
-        <p className="mt-1 text-sm text-cockpit-muted">
-          {items.length} Items verglichen · {group.property_keys.length} Eigenschaften
-        </p>
       </div>
 
       <ScrollArea className="w-full rounded-lg border border-cockpit-border shadow-cockpit">

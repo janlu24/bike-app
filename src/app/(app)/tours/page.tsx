@@ -22,7 +22,7 @@ export default async function ToursPage() {
           .from("tours")
           .select("*")
           .eq("user_id", user.id)
-          .order("date", { ascending: false, nullsFirst: false })
+          .order("start_date", { ascending: false, nullsFirst: false })
           .order("created_at", { ascending: false })
       ).data ?? [])
     : [];

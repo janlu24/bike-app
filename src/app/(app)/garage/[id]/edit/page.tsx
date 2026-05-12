@@ -1,4 +1,5 @@
 import { DeleteItemForm, ItemForm } from "@/components/items/ItemForm";
+import { ItemTourHistory } from "@/components/items/ItemTourHistory";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BikeOption, GroupRow, ItemRow } from "@/types/supabase";
 import { notFound } from "next/navigation";
@@ -68,6 +69,8 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
       <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
         <ItemForm item={item} bikes={bikes} groupName={groupName} />
       </div>
+
+      <ItemTourHistory itemId={id} />
     </div>
   );
 }

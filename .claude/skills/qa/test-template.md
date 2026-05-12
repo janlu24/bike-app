@@ -1,8 +1,3 @@
-# QA Test Results Template
-
-Add this section to the END of the feature spec `/features/PROJ-X.md`:
-
-```markdown
 ---
 
 ## QA Test Results
@@ -12,45 +7,22 @@ Add this section to the END of the feature spec `/features/PROJ-X.md`:
 **Tester:** QA Engineer (AI)
 
 ### Acceptance Criteria Status
+- [ ] **AC-1: [Name]** - [Pass/Fail]
+- [ ] **A11y Check:** [Pass/Fail] - (e.g., Screen reader & keyboard nav)
 
-#### AC-1: [Criterion Name]
-- [x] Sub-criterion passed
-- [ ] BUG: Sub-criterion failed (describe what went wrong)
-
-#### AC-2: [Criterion Name]
-- [x] All sub-criteria passed
-
-### Edge Cases Status
-
-#### EC-1: [Edge Case Name]
-- [x] Handled correctly
-
-#### EC-2: [Edge Case Name]
-- [ ] BUG: Not handled (describe expected vs actual behavior)
-
-### Security Audit Results
-- [x] Authentication: Cannot access without login
-- [x] Authorization: Users cannot access other users' data
-- [x] Input validation: XSS attempts blocked
-- [x] Rate limiting: Excessive requests handled
-- [ ] BUG: [Security issue description]
+### Security & Privacy Audit
+- [x] **RLS Verification:** No unauthorized access possible via direct API calls.
+- [x] **PII Protection:** No sensitive data found in logs or network traffic.
+- [x] **Injection:** Protected against XSS and SQLi.
+- [ ] **BUG:** [Describe security issue]
 
 ### Bugs Found
-
-#### BUG-1: [Bug Title]
-- **Severity:** Critical | High | Medium | Low
-- **Steps to Reproduce:**
-  1. Go to [page]
-  2. Do [action]
-  3. Expected: [what should happen]
-  4. Actual: [what actually happens]
-- **Screenshot:** [if visual bug]
-- **Priority:** Fix before deployment | Fix in next sprint | Nice to have
+#### BUG-1: [Title]
+- **Severity:** [Critical|High|Medium|Low]
+- **Steps:** 1. ... 2. ...
+- **Priority:** [Fix before deployment | Next sprint]
 
 ### Summary
-- **Acceptance Criteria:** X/Y passed
-- **Bugs Found:** N total (C critical, H high, M medium, L low)
+- **AC Status:** X/Y passed
 - **Security:** [Pass / Issues found]
-- **Production Ready:** YES / NO
-- **Recommendation:** [Deploy / Fix bugs first]
-```
+- **Production Ready:** **[YES / NO]**

@@ -23,10 +23,13 @@ Before starting ANY work, check if the project has been initialized:
 
 ## Git Conventions
 - Commit format: `type(PROJ-X): description`
+- The `PROJ-X` ID must strictly match the ID in `features/INDEX.md`.
+- For database changes, include a hint if migrations were generated: `feat(PROJ-1): add profiles table + migration`
 - Types: feat, fix, refactor, test, docs, deploy, chore
 - Check existing features before creating new ones: `ls features/ | grep PROJ-`
 - Check existing components before building: `git ls-files src/components/`
 - Check existing APIs before building: `git ls-files src/app/api/`
+- If a commit changes the database schema, ensure the commit message or the implementation notes in the feature spec confirm that supabase gen types was executed.
 
 ## Human-in-the-Loop
 - Always ask for user approval before finalizing deliverables
@@ -67,8 +70,17 @@ After completing work on any feature, you MUST update tracking files. Follow thi
 - When unsure about current project state, read `features/INDEX.md` first
 - Run `git diff` to verify what has already been changed in this session
 - Never guess at import paths, component names, or API routes - verify by reading
+- Before creating a new utility function or hook, search the codebase for similar existing logic to avoid duplication.
+- **No Unscoped Refactoring:** Do NOT refactor working code outside the immediate scope of the current feature. If you discover a bug or "code smell" in unrelated files, report it to the user as a suggestion instead of fixing it silently.
 
 ## Handoffs Between Skills
 - After completing a skill, suggest the next skill to the user
 - Format: "Next step: Run `/skillname` to [action]"
 - Handoffs are always user-initiated, never automatic
+
+## Legacy Code Handling
+- The directory `src/alt_bike software/` contains existing logic and reference code.
+- NEVER modify files in `src/alt_bike software/`.
+- Use it ONLY as a reference to understand existing business logic.
+- All new implementation MUST happen in the root directories (`src/app/`, `src/components/`, etc.).
+- When migrating features, rewrite them to follow the new rules (Zod, RLS, shadcn/ui).

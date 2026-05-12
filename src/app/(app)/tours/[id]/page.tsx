@@ -1,25 +1,13 @@
 import { TourStatusBadge } from "@/components/tours/TourStatusBadge";
 import { TourStatsGrid } from "@/components/tours/TourStatsGrid";
 import { TourPacklist } from "@/components/tours/TourPacklist";
+import { TourDeleteButton } from "@/components/tours/TourDeleteButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { deleteTourAction } from "@/app/(app)/tours/actions";
 import { formatTourDate } from "@/lib/tours/utils";
 import type { ItemRow, TourRow } from "@/types/supabase";
 import { MapPin, Pencil } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -45,16 +33,18 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
   const isOwner = user?.id === tour.user_id;
 
-  // Load packlist items with a join.
+  // Load packlist items with a join, including feedback columns.
   const { data: tourItems } = await supabase
     .from("tour_items")
-    .select("id, item_id, items(*)")
+    .select("id, item_id, rating, note, items(*)")
     .eq("tour_id", id)
     .order("added_at", { ascending: true });
 
   const packlistEntries = (tourItems ?? []).map((ti) => ({
     tourItemId: ti.id,
     item: ti.items as unknown as ItemRow,
+    rating: ti.rating,
+    note: ti.note,
   }));
 
   // Load child items (garage items whose parent_id is one of the packlist items).
@@ -77,6 +67,30 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
       }
     }
   }
+
+  // Collect all child item IDs to load their feedback and deduplicate the main list.
+  const allChildIds: string[] = [];
+  for (const children of childItemMap.values()) {
+    for (const child of children) allChildIds.push(child.id);
+  }
+
+  // Load existing feedback for child items (they may have tour_items rows from prior saves).
+  const childFeedbackMap: Map<string, { rating: number | null; note: string | null }> = new Map();
+  if (allChildIds.length > 0) {
+    const { data: childFeedback } = await supabase
+      .from("tour_items")
+      .select("item_id, rating, note")
+      .eq("tour_id", id)
+      .in("item_id", allChildIds);
+    for (const row of childFeedback ?? []) {
+      childFeedbackMap.set(row.item_id, { rating: row.rating, note: row.note });
+    }
+  }
+
+  // Filter the main packlist: exclude items that are auto-included children.
+  // This prevents duplicate display if a child item gained its own tour_items row via feedback upsert.
+  const childItemIdSet = new Set(allChildIds);
+  const displayedPacklistEntries = packlistEntries.filter((e) => !childItemIdSet.has(e.item.id));
 
   // Load all garage items for the item picker (only for owner).
   const garageItems: ItemRow[] = isOwner
@@ -130,37 +144,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
               Bearbeiten
             </Link>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-cockpit-muted hover:text-red-400 hover:bg-red-950/20 border border-transparent hover:border-red-900"
-                >
-                  Löschen
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-cockpit-surface border-cockpit-border">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Tour wirklich löschen?</AlertDialogTitle>
-                  <AlertDialogDescription className="text-cockpit-muted">
-                    „{tourRow.name}" und alle Packlisten-Einträge werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <form action={deleteTourAction}>
-                    <input type="hidden" name="id" value={id} />
-                    <AlertDialogAction
-                      type="submit"
-                      className="bg-red-700 text-white hover:bg-red-600"
-                    >
-                      Löschen
-                    </AlertDialogAction>
-                  </form>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <TourDeleteButton tourId={id} tourName={tourRow.name} />
           </div>
         )}
       </header>
@@ -171,8 +155,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
       {/* Packlist */}
       <TourPacklist
         tourId={id}
-        entries={packlistEntries}
+        entries={displayedPacklistEntries}
         childItemMap={childItemMap}
+        childFeedbackMap={childFeedbackMap}
         garageItems={garageItems}
         isOwner={isOwner}
       />

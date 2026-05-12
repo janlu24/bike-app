@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseTourInput, isValidTourId } from "@/lib/tours/validation";
 import type { TourFormState } from "./schema";
@@ -118,19 +119,43 @@ export async function updateTourAction(
   redirect(`/tours/${tourId}`);
 }
 
-export async function deleteTourAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
+export async function deleteTourAction(id: string): Promise<{ error?: string }> {
   if (!isValidTourId(id)) {
-    revalidatePath("/tours");
-    redirect("/tours");
+    return { error: "Ungültige Tour-ID." };
   }
 
-  const { supabase, user } = await requireUser();
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
 
-  await supabase.from("tours").delete().eq("id", id).eq("user_id", user.id);
+  // Verify ownership before deleting (defense in depth on top of RLS).
+  const { data: tour } = await supabase
+    .from("tours")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!tour) return { error: "Tour nicht gefunden." };
+
+  const { error } = await supabase
+    .from("tours")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("[deleteTourAction] Supabase error:", error);
+    return { error: "Löschen fehlgeschlagen. Bitte erneut versuchen." };
+  }
 
   revalidatePath("/tours");
-  redirect("/tours");
+  revalidatePath(`/tours/${id}`);
+  return {};
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +229,107 @@ export async function removeTourItemAction(tourId: string, itemId: string): Prom
 
   if (error) {
     return { error: "Entfernen fehlgeschlagen." };
+  }
+
+  revalidatePath(`/tours/${tourId}`);
+  return {};
+}
+
+// ---------------------------------------------------------------------------
+// Feedback mutations (rating + note on tour_items)
+// ---------------------------------------------------------------------------
+
+const feedbackSchema = z.object({
+  rating: z.number().int().min(1).max(5).nullable(),
+  note: z.string().max(1000).nullable(),
+}).refine((d) => d.rating !== null || (d.note !== null && d.note.trim().length > 0), {
+  message: "Mindestens Bewertung oder Notiz muss angegeben werden.",
+});
+
+export async function upsertFeedbackAction(
+  tourId: string,
+  itemId: string,
+  rating: number | null,
+  note: string | null,
+): Promise<{ error?: string }> {
+  if (!isValidTourId(tourId) || !isValidTourId(itemId)) {
+    return { error: "Ungültige ID." };
+  }
+
+  const parsed = feedbackSchema.safeParse({ rating, note: note?.trim() || null });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe." };
+  }
+
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
+
+  // Verify tour ownership (defense in depth on top of RLS).
+  const { data: tour } = await supabase
+    .from("tours")
+    .select("id")
+    .eq("id", tourId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!tour) return { error: "Tour nicht gefunden." };
+
+  // Use upsert so child items (auto-included via parent_id) get a tour_items
+  // row created on first feedback — tour owner check above + RLS enforce access.
+  const { error } = await supabase
+    .from("tour_items")
+    .upsert(
+      { tour_id: tourId, item_id: itemId, rating: parsed.data.rating, note: parsed.data.note },
+      { onConflict: "tour_id,item_id" },
+    );
+
+  if (error) {
+    return { error: "Feedback speichern fehlgeschlagen." };
+  }
+
+  revalidatePath(`/tours/${tourId}`);
+  return {};
+}
+
+export async function deleteFeedbackAction(
+  tourId: string,
+  itemId: string,
+): Promise<{ error?: string }> {
+  if (!isValidTourId(tourId) || !isValidTourId(itemId)) {
+    return { error: "Ungültige ID." };
+  }
+
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
+
+  // Verify tour ownership (defense in depth on top of RLS).
+  const { data: tour } = await supabase
+    .from("tours")
+    .select("id")
+    .eq("id", tourId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!tour) return { error: "Tour nicht gefunden." };
+
+  const { error } = await supabase
+    .from("tour_items")
+    .update({ rating: null, note: null })
+    .eq("tour_id", tourId)
+    .eq("item_id", itemId);
+
+  if (error) {
+    return { error: "Feedback löschen fehlgeschlagen." };
   }
 
   revalidatePath(`/tours/${tourId}`);

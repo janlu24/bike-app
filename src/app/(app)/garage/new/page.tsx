@@ -8,7 +8,14 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function NewItemPage() {
+interface NewItemPageProps {
+  searchParams: Promise<{ groupId?: string }>;
+}
+
+export default async function NewItemPage({ searchParams }: NewItemPageProps) {
+  const { groupId } = await searchParams;
+  const initialGroupId = typeof groupId === "string" && groupId.length > 0 ? groupId : undefined;
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -50,7 +57,7 @@ export default async function NewItemPage() {
       </div>
 
       <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
-        <ItemForm bikes={bikes} templates={templates} />
+        <ItemForm bikes={bikes} templates={templates} initialGroupId={initialGroupId} />
       </div>
     </div>
   );

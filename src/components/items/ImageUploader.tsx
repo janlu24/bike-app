@@ -1,7 +1,8 @@
 "use client";
 
+import { compressImage } from "@/lib/compressImage";
 import { cn } from "@/lib/utils";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface ImageUploaderProps {
@@ -12,6 +13,7 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(initialUrl ?? null);
   const [removed, setRemoved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
 
@@ -21,7 +23,7 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
     };
   }, []);
 
-  function handleFile(file: File | undefined) {
+  async function handleFile(file: File | undefined) {
     setError(null);
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
@@ -31,15 +33,40 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
       setPreview(initialUrl ?? null);
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Bild ist größer als 5 MB.");
+
+    const allowed = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+    if (!allowed.has(file.type)) {
+      setError("Nur JPEG, PNG, WebP oder AVIF erlaubt.");
       if (inputRef.current) inputRef.current.value = "";
       return;
     }
-    const url = URL.createObjectURL(file);
-    objectUrlRef.current = url;
-    setPreview(url);
-    setRemoved(false);
+
+    setIsCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+
+      if (compressed.size > 5 * 1024 * 1024) {
+        setError("Das Bild ist zu groß (max. 5 MB nach Kompression).");
+        if (inputRef.current) inputRef.current.value = "";
+        return;
+      }
+
+      if (inputRef.current) {
+        const dt = new DataTransfer();
+        dt.items.add(compressed);
+        inputRef.current.files = dt.files;
+      }
+
+      const url = URL.createObjectURL(compressed);
+      objectUrlRef.current = url;
+      setPreview(url);
+      setRemoved(false);
+    } catch {
+      setError("Upload fehlgeschlagen. Bitte versuche es erneut.");
+      if (inputRef.current) inputRef.current.value = "";
+    } finally {
+      setIsCompressing(false);
+    }
   }
 
   function clearImage() {
@@ -61,10 +88,15 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
       <div
         className={cn(
           "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-md border bg-cockpit-surface",
-          preview ? "border-petrol-700" : "border-dashed border-cockpit-border"
+          preview && !isCompressing ? "border-petrol-700" : "border-dashed border-cockpit-border"
         )}
       >
-        {preview ? (
+        {isCompressing ? (
+          <div className="flex flex-col items-center gap-2 text-cockpit-muted">
+            <Loader2 size={22} className="animate-spin" aria-hidden />
+            <span className="text-[11px] uppercase tracking-widest">Komprimiere …</span>
+          </div>
+        ) : preview ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -88,9 +120,20 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-cockpit-border px-3 py-1.5 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300">
-          <ImagePlus size={13} strokeWidth={1.75} aria-hidden />
-          {preview ? "Bild ersetzen" : "Bild auswählen"}
+        <label
+          className={cn(
+            "inline-flex items-center gap-2 rounded-md border border-cockpit-border px-3 py-1.5 text-xs text-cockpit-muted transition-colors",
+            isCompressing
+              ? "cursor-not-allowed opacity-50"
+              : "cursor-pointer hover:border-petrol-600 hover:text-petrol-300"
+          )}
+        >
+          {isCompressing ? (
+            <Loader2 size={13} className="animate-spin" aria-hidden />
+          ) : (
+            <ImagePlus size={13} strokeWidth={1.75} aria-hidden />
+          )}
+          {isCompressing ? "Komprimiere …" : preview ? "Bild ersetzen" : "Bild auswählen"}
           <input
             ref={inputRef}
             type="file"
@@ -98,10 +141,11 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
             accept="image/jpeg,image/png,image/webp,image/avif"
             onChange={(e) => handleFile(e.target.files?.[0])}
             className="hidden"
+            disabled={isCompressing}
           />
         </label>
 
-        {preview && (
+        {preview && !isCompressing && (
           <button
             type="button"
             onClick={clearImage}
@@ -112,9 +156,11 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
           </button>
         )}
 
-        <p className="text-[11px] text-cockpit-muted">
-          JPEG · PNG · WebP · AVIF · max. 5 MB
-        </p>
+        {!isCompressing && (
+          <p className="text-[11px] text-cockpit-muted">
+            JPEG · PNG · WebP · AVIF · max. 5 MB
+          </p>
+        )}
       </div>
 
       <input
@@ -125,7 +171,11 @@ export function ImageUploader({ initialUrl }: ImageUploaderProps) {
         className="hidden"
       />
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

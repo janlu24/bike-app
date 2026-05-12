@@ -120,7 +120,15 @@ export async function createItemAction(
   }
 
   revalidatePath("/", "layout");
-  redirect("/garage");
+
+  // Context-aware redirect: if the item was created from a group view, go back there.
+  // We use the already-verified group_id (not the raw form value) to prevent open redirects.
+  const rawRedirectGroupId = String(formData.get("redirect_group_id") ?? "").trim();
+  const destination =
+    group_id && rawRedirectGroupId === group_id
+      ? `/garage/groups/${group_id}/compare`
+      : "/garage";
+  redirect(destination);
 }
 
 export async function updateItemAction(

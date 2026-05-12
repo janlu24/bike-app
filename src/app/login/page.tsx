@@ -1,12 +1,25 @@
-import type { Metadata } from "next";
 import { Logo } from "@/components/Logo";
+import type { Metadata } from "next";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
   title: "Anmelden · Setup Registry",
 };
 
-export default function LoginPage() {
+const URL_ERROR_MESSAGES: Record<string, string> = {
+  link_expired:
+    "Dieser Bestätigungslink ist abgelaufen. Bitte registriere dich erneut oder fordere eine neue E-Mail an.",
+  auth: "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const urlError = error ? (URL_ERROR_MESSAGES[error] ?? URL_ERROR_MESSAGES.auth) : null;
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-6">
@@ -23,6 +36,14 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
+          {urlError && (
+            <div
+              role="alert"
+              className="mb-4 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-xs text-red-300"
+            >
+              {urlError}
+            </div>
+          )}
           <LoginForm />
         </div>
 

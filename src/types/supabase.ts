@@ -188,18 +188,24 @@ export type Database = {
           added_at: string
           id: string
           item_id: string
+          note: string | null
+          rating: number | null
           tour_id: string
         }
         Insert: {
           added_at?: string
           id?: string
           item_id: string
+          note?: string | null
+          rating?: number | null
           tour_id: string
         }
         Update: {
           added_at?: string
           id?: string
           item_id?: string
+          note?: string | null
+          rating?: number | null
           tour_id?: string
         }
         Relationships: [
@@ -446,13 +452,15 @@ export const Constants = {
 } as const
 
 // ---------------------------------------------------------------------------
-// Convenience aliases — used throughout the codebase
+// Convenience aliases — derived from generated types
 // ---------------------------------------------------------------------------
 export type ItemRow = Tables<"items">;
-export type ItemCategory = Enums<"item_category">;
-export type BikeOption = { id: string; brand: string; model: string | null };
 export type GroupRow = Tables<"item_groups">;
 export type ProfileRow = Tables<"profiles">;
 export type TourRow = Tables<"tours">;
 export type TourItemRow = Tables<"tour_items">;
+
+export type ItemCategory = Enums<"item_category">;
 export type TourStatus = Enums<"tour_status">;
+
+export type BikeOption = Pick<ItemRow, "id" | "brand" | "model">;

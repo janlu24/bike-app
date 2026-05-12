@@ -9,96 +9,74 @@ user-invocable: true
 
 You are a helpful project assistant. Your job is to analyze the current project state and tell the user exactly where they are and what to do next.
 
-## When Invoked
+## Workflow Intelligence
 
 ### Step 1: Analyze Current State
+Read these files to understand the project's pulse:
+1. **PRD:** Check `docs/PRD.md` (Filled or Template?).
+2. **Feature Index:** Read `features/INDEX.md` to see the roadmap and statuses.
+3. **Feature Specs:** Scan `/features/PROJ-X-*.md` for specific sections:
+   - **Tech Design:** Added by `/architecture`.
+   - **Implementation Notes:** Added by `/backend` or `/frontend`.
+   - **QA Test Results:** Added by `/qa`.
+   - **Deployment:** Added by `/deploy`.
+4. **Environment:** Check for root `supabase/migrations/` and `src/types/supabase.ts` to see if the new framework is synced.
+5. **Legacy Context:** Check if the feature logic currently exists in `src/alt_bike software/` to guide migration.
 
-Read these files to understand where the project stands:
+### Step 2: Determine Next Action (Logic)
 
-1. **Check PRD:** Read `docs/PRD.md`
-   - Is it still the empty template? → Project not initialized yet
-   - Is it filled out? → Project has been set up
+**If PRD is empty:**
+> Run `/requirements` to initialize your project description.
 
-2. **Check Feature Index:** Read `features/INDEX.md`
-   - No features listed? → No features created yet
-   - Features exist? → Check their statuses
+**If Features are "Planned" (No Tech Design):**
+> Run `/architecture` for `features/PROJ-X-*.md` to create the technical blueprint.
 
-3. **Check Feature Specs:** For each feature in INDEX.md, check if:
-   - Tech Design section exists (added by /architecture)
-   - QA Test Results section exists (added by /qa)
-   - Deployment section exists (added by /deploy)
+**If feature is 'Planned' but exists in legacy code:**
+> Feature PROJ-X logic was detected in `src/alt_bike software/`. Run `/architecture` to start the migration to the new framework.
 
-4. **Check Codebase:** Quick scan of what's been built
-   - `ls src/components/*.tsx 2>/dev/null` → Custom components
-   - `ls src/app/api/ 2>/dev/null` → API routes
-   - `ls src/components/ui/` → Installed shadcn components
+**If "Architected" but no Implementation:**
+> **Check Backend Need:** If the design requires DB changes, run `/backend` first to generate types.
+> **UI Only:** Run `/frontend` to build the components.
 
-### Step 2: Determine Next Action
+**If "In Progress" (Partially built):**
+> Check if backend types are generated (`src/types/supabase.ts`).
+> If Backend is done, run `/frontend` to complete the UI.
 
-Based on the state analysis, determine what the user should do next:
+**If "In Review" (Implementation done):**
+> Run `/qa` to perform the security audit and test acceptance criteria.
 
-**If PRD is empty template:**
-> Your project hasn't been initialized yet.
-> Run `/requirements` with a description of what you want to build.
-> Example: `/requirements I want to build a task management app for small teams`
+**If "Approved" (Passed QA):**
+> Run `/deploy` to push to production and sync Supabase migrations.
 
-**If PRD exists but no features:**
-> Your PRD is set up but no features have been created yet.
-> Run `/requirements` to create your first feature specification.
-
-**If features exist with status "Planned" (no Tech Design):**
-> Feature PROJ-X is ready for architecture design.
-> Run `/architecture` to create the technical design for `features/PROJ-X-name.md`
-
-**If features have Tech Design but no implementation:**
-> Feature PROJ-X has a tech design and is ready for implementation.
-> Run `/frontend` to build the UI for `features/PROJ-X-name.md`
-> (If backend is needed, run `/backend` after frontend is done)
-
-**If features are implemented but no QA:**
-> Feature PROJ-X is implemented and ready for testing.
-> Run `/qa` to test `features/PROJ-X-name.md` against its acceptance criteria.
-
-**If features have passed QA but aren't deployed:**
-> Feature PROJ-X has passed QA and is ready for deployment.
-> Run `/deploy` to deploy to production.
-
-**If all features are deployed:**
-> All current features are deployed! You can:
-> - Run `/requirements` to add a new feature
-> - Check `docs/PRD.md` for planned features not yet specified
-
-### Step 3: Answer User Questions
-
-If the user asked a specific question (via arguments), answer it in the context of the current project state. Common questions:
-
-- "What skills are available?" → List all 6 skills with brief descriptions
-- "How do I add a new feature?" → Explain `/requirements` workflow
-- "How do I customize this template?" → Point to CLAUDE.md, rules/, skills/
-- "What's the project structure?" → Explain the directory layout
-- "How do I deploy?" → Explain `/deploy` workflow and prerequisites
+## Step 3: Available Commands Reference
+- `/requirements`: Create/update project and feature specs.
+- `/architecture`: Technical design, RLS rules, and component tree.
+- `/backend`: DB migrations, RLS policies, Zod validation, and API logic.
+- `/frontend`: Responsive UI, shadcn/ui components, and Type-Safe integration.
+- `/qa`: Manual/E2E testing, A11y check, and Red-Team security audit.
+- `/deploy`: Production build, Vercel deployment, and DB sync.
 
 ## Output Format
-
 Always respond with this structure:
 
-### Current Project Status
-_Brief summary of where the project stands_
+### 📍 Current Project Status
+_Summary of the overall progress_.
 
-### Features Overview
-_Table of features and their current status (from INDEX.md)_
+### 📋 Feature Roadmap
+_Table: ID | Feature | Status | Next Step_.
 
-### Recommended Next Step
-_The single most important thing to do next, with the exact command_
+### 🚀 Recommended Next Step
+_The single most important command to run right now_.
 
-### Other Available Actions
-_Other things the user could do right now_
+### 💡 Pro-Tip
+_Mention a rule from `.claude/rules/` like "Write-Then-Verify" or "Security-First"_.
 
-If the user asked a specific question, answer that FIRST, then show the status overview.
+### Important: Root Awareness
+- Strict Isolation: All help guidance, file paths, and command suggestions MUST refer strictly to the root directory (e.g., src/app/, src/components/, supabase/migrations/).  
+- Legacy Reference: Never suggest implementing or modifying code within src/alt_bike software/. That directory is for READ-ONLY reference during migration.  
+- Status Integrity: Always verify the features/INDEX.md status before recommending the next command.
 
-## Important
-- Be concise and actionable
-- Always give the exact command to run
-- Reference specific file paths
-- Don't explain the framework architecture in detail unless asked
-- Focus on: "Here's where you are, here's what to do next"
+## Git Commit
+```
+docs(help): Update help guide workflow logic
+```

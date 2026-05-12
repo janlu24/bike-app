@@ -1,33 +1,38 @@
 # Backend Implementation Checklist
 
-## Core Checklist
-- [ ] Checked existing tables/APIs via git before creating new ones
-- [ ] Database tables created in Supabase
-- [ ] Row Level Security enabled on ALL new tables
-- [ ] RLS policies created for SELECT, INSERT, UPDATE, DELETE
-- [ ] Indexes created on performance-critical columns
-- [ ] Foreign keys set with appropriate ON DELETE behavior
-- [ ] All planned API endpoints implemented in `/src/app/api/`
-- [ ] Authentication verified (no access without valid session)
-- [ ] Input validation with Zod on all POST/PUT requests
-- [ ] Meaningful error messages with correct HTTP status codes
-- [ ] No TypeScript errors in API routes
-- [ ] All endpoints tested manually
-- [ ] No hardcoded secrets in source code
-- [ ] Frontend connected to real API endpoints
-- [ ] User has reviewed and approved
+## Core Implementation
+- [ ] **Migrations First:** No manual SQL editor changes; all changes are in `supabase/migrations/`.
+- [ ] **RLS Mandatory:** Row Level Security enabled on ALL new or modified tables.
+- [ ] **Policy Coverage:** Explicit RLS policies created for SELECT, INSERT, UPDATE, and DELETE.
+- [ ] **Data Integrity:** Foreign keys set with `ON DELETE CASCADE` or appropriate behavior.
+- [ ] **Validation:** Zod schemas implemented for all POST/PUT/PATCH request bodies.
+- [ ] **Auth Check:** User session verified via Supabase Auth before any data processing.
+- [ ] **Type-Safety:** `supabase gen types` executed and generated types used in API/Server Actions.
+- [ ] **Error Handling:** Meaningful error messages returned with correct HTTP status codes (400, 401, 403, 404, 500).
+- [ ] **Legacy Logic:** Reviewed src/alt_bike software/ for existing business logic and edge cases to ensure full migration.
+- [ ] **Root Migrations:** Verified that ALL new migrations are located in the root supabase/migrations/ (not in legacy subfolders).
+- [ ] **Type-Safety:** supabase gen types executed; verified that src/types/supabase.ts (Root) was updated and used.  
+- [ ] **Naming:** Used snake_case for database entities and camelCase for TypeScript/API variables.
 
-## Verification (run before marking complete)
-- [ ] `npm run build` passes without errors
-- [ ] All acceptance criteria from feature spec addressed in API
-- [ ] All API endpoints return correct status codes (test with curl or browser)
-- [ ] `features/INDEX.md` status updated to "In Progress"
-- [ ] Code committed to git
+## Verification & Security
+- [ ] **RLS Testing:** Verified RLS policies manually using `curl` or integration tests (checking restricted access).
+- [ ] **PII Protection:** Confirmed that no sensitive data (PII) is leaked in logs or API responses.
+- [ ] **No Secrets:** Verified that no API keys or database secrets are hardcoded in the source code.
+- [ ] **Acceptance Criteria:** All ACs from the feature spec are fully addressed by the implementation.
+- [ ] **Build Check:** `npm run build` or `next build` passes without TypeScript or linting errors.
+- [ ] **PII Protection:** Confirmed no sensitive data (Emails, Tokens) is logged to the console or leaked in public API responses.
+- [ ] **Security:** Verified that no 'service_role' keys are used in client-side or standard API logic to bypass RLS.
 
-## Performance Checklist
-- [ ] All frequently filtered columns have indexes
-- [ ] No N+1 queries (use Supabase joins instead of loops)
-- [ ] All list queries use `.limit()`
-- [ ] Zod validation on all write endpoints
-- [ ] Slow queries cached where appropriate (optional for MVP)
-- [ ] Rate limiting on public-facing APIs (optional for MVP)
+## Performance & Optimization
+- [ ] **Indexing:** Indexes created on all columns used in WHERE, JOIN, or ORDER BY clauses.
+- [ ] **Query Efficiency:** No N+1 query loops; utilized Supabase joins or `.select('*, other_table(*)')`.
+- [ ] **Pagination:** All list queries implement `.limit()` and support pagination.
+- [ ] **Caching:** Utilized Next.js `unstable_cache` or similar for rarely changing data.
+
+## Process & Tracking (General Rules)
+- [ ] **Implementation Notes:** Detailed notes added to the feature spec documenting what was built.
+- [ ] **Status Updated:** `features/INDEX.md` and feature spec header updated to "In Review".
+- [ ] **Git:** Changes committed with format `feat(PROJ-X): description`.
+- [ ] **Status Updated:** features/INDEX.md and feature spec header updated correctly:  
+    - Set to 'In Review' if both Backend and Frontend are complete.  
+    - Set to 'In Progress' if Frontend implementation is still pending.

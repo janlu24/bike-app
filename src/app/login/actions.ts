@@ -30,7 +30,14 @@ export async function signInAction(
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
+
   if (error) {
+    if (error.message === "Email not confirmed") {
+      return {
+        notice:
+          "Bitte bestätige zuerst deine E-Mail-Adresse. Schau in deinen Posteingang.",
+      };
+    }
     return { error: "Anmeldung fehlgeschlagen: ungültige Zugangsdaten." };
   }
 
@@ -52,8 +59,8 @@ export async function signUpAction(
     options: {
       emailRedirectTo:
         (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") +
-        "/auth/callback"
-    }
+        "/auth/callback",
+    },
   });
 
   if (error) {
@@ -64,7 +71,7 @@ export async function signUpAction(
   if (!data.session) {
     return {
       notice:
-        "Registrierung erfolgreich. Bitte bestätige den Link in deiner E-Mail."
+        "Registrierung erfolgreich. Bitte bestätige den Link in deiner E-Mail.",
     };
   }
 

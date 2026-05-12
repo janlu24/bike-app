@@ -20,11 +20,12 @@ interface ItemFormProps {
   bikes?: BikeOption[];
   templates?: GroupSeed[];
   groupName?: string;
+  initialGroupId?: string;
 }
 
 const initial: ItemFormState = { data: null, fieldErrors: {} };
 
-export function ItemForm({ item, bikes = [], templates = [], groupName }: ItemFormProps) {
+export function ItemForm({ item, bikes = [], templates = [], groupName, initialGroupId }: ItemFormProps) {
   const isEdit = Boolean(item);
   const action = isEdit
     ? updateItemAction.bind(null, item!.id)
@@ -33,14 +34,21 @@ export function ItemForm({ item, bikes = [], templates = [], groupName }: ItemFo
   const [state, formAction, pending] = useActionState(action, initial);
   const errors = state.fieldErrors;
 
+  // In create mode, pre-select the category of the initially passed group (if any).
+  const preselectedGroup = !isEdit && initialGroupId
+    ? templates.find((t) => t.id === initialGroupId)
+    : undefined;
+
   const [category, setCategory] = useState<ItemCategory>(
-    item?.category ?? "Bike"
+    item?.category ?? preselectedGroup?.category ?? "Bike"
   );
   const showParent = CATEGORIES_WITH_PARENT.includes(category);
   const availableBikes = bikes.filter((b) => b.id !== item?.id);
 
   // Group selector state (create mode only).
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(
+    initialGroupId ?? ""
+  );
   const categoryGroups = templates.filter((t) => t.category === category);
 
   function handleCategoryChange(cat: ItemCategory) {
@@ -57,6 +65,10 @@ export function ItemForm({ item, bikes = [], templates = [], groupName }: ItemFo
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
+      {/* Signals the action to redirect back to the group compare view after save */}
+      {!isEdit && initialGroupId && (
+        <input type="hidden" name="redirect_group_id" value={initialGroupId} />
+      )}
       {/* Category */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-1.5">
