@@ -29,6 +29,7 @@ The Setup Registry ist ein digitaler Zwilling für sportliche Radsport-Enthusias
 | P1 | PROJ-10: Refactoring & Groups Enhancement | Planned |
 | P1 | PROJ-11: Tour Management & Packliste | Planned |
 | P1 | PROJ-12: Tour Item Feedback & Garage History | Planned |
+| P1 | PROJ-13: Item View/Edit Split | Planned |
 
 ## Success Metrics
 - Aktiv geteilte Setups: Nutzer mit `is_public = true` auf Profil und mindestens einem Item
