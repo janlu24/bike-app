@@ -12,6 +12,7 @@ import {
   renamePresetSchema,
   presetIdSchema,
   applyPresetSchema,
+  presetItemSchema,
 } from "@/lib/items/preset-validation";
 import type { BikePresetRow, ItemRow } from "@/types/supabase";
 import type { ItemFormState } from "./schema";
@@ -384,7 +385,8 @@ export type PreviewPresetResult = { ok: true; diff: PresetApplyDiff } | { error:
 export async function createPresetAction(
   bikeId: string,
   name: string,
-  description?: string | null
+  description?: string | null,
+  snapshot: boolean = true
 ): Promise<PresetResult> {
   const parsed = createPresetSchema.safeParse({ bikeId, name, description: description ?? null });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe." };
@@ -406,13 +408,6 @@ export async function createPresetAction(
     .maybeSingle();
   if (!bike) return { error: "Bike nicht gefunden." };
 
-  const { data: children } = await supabase
-    .from("items")
-    .select("id")
-    .eq("parent_id", parsed.data.bikeId)
-    .eq("user_id", user.id)
-    .neq("category", "Bike");
-
   const { data: preset, error: insertErr } = await supabase
     .from("bike_presets")
     .insert({
@@ -426,18 +421,137 @@ export async function createPresetAction(
 
   if (insertErr || !preset) return { error: "Preset speichern fehlgeschlagen." };
 
-  if (children && children.length > 0) {
-    const { error: itemsErr } = await supabase
-      .from("preset_items")
-      .insert(children.map((c) => ({ preset_id: preset.id, item_id: c.id })));
-    if (itemsErr) {
-      await supabase.from("bike_presets").delete().eq("id", preset.id);
-      return { error: "Preset-Items speichern fehlgeschlagen." };
+  if (snapshot) {
+    const { data: children } = await supabase
+      .from("items")
+      .select("id")
+      .eq("parent_id", parsed.data.bikeId)
+      .eq("user_id", user.id)
+      .neq("category", "Bike");
+
+    if (children && children.length > 0) {
+      const { error: itemsErr } = await supabase
+        .from("preset_items")
+        .insert(children.map((c) => ({ preset_id: preset.id, item_id: c.id })));
+      if (itemsErr) {
+        await supabase.from("bike_presets").delete().eq("id", preset.id);
+        return { error: "Preset-Items speichern fehlgeschlagen." };
+      }
     }
   }
 
   revalidatePath("/garage");
   return { ok: true, preset };
+}
+
+export type SandboxDataResult =
+  | { ok: true; allUserItems: ItemRow[]; currentPresetItemIds: string[] }
+  | { error: string };
+
+export async function getPresetSandboxDataAction(presetId: string): Promise<SandboxDataResult> {
+  const parsed = presetIdSchema.safeParse({ presetId });
+  if (!parsed.success) return { error: "Ungültige ID." };
+
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
+
+  const { data: preset } = await supabase
+    .from("bike_presets")
+    .select("id, preset_items(item_id)")
+    .eq("id", parsed.data.presetId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!preset) return { error: "Preset nicht gefunden." };
+
+  const currentPresetItemIds = (preset.preset_items as { item_id: string }[]).map((pi) => pi.item_id);
+
+  const { data: allItems } = await supabase
+    .from("items")
+    .select("*")
+    .eq("user_id", user.id)
+    .neq("category", "Bike")
+    .is("deleted_at", null)
+    .order("brand", { ascending: true });
+
+  return { ok: true, allUserItems: (allItems ?? []) as ItemRow[], currentPresetItemIds };
+}
+
+export async function addItemToPresetAction(
+  presetId: string,
+  itemId: string
+): Promise<PresetOpResult> {
+  const parsed = presetItemSchema.safeParse({ presetId, itemId });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe." };
+
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
+
+  const { data: preset } = await supabase
+    .from("bike_presets")
+    .select("id")
+    .eq("id", parsed.data.presetId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!preset) return { error: "Preset nicht gefunden." };
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("id")
+    .eq("id", parsed.data.itemId)
+    .eq("user_id", user.id)
+    .neq("category", "Bike")
+    .maybeSingle();
+  if (!item) return { error: "Item nicht gefunden." };
+
+  const { error } = await supabase
+    .from("preset_items")
+    .upsert({ preset_id: parsed.data.presetId, item_id: parsed.data.itemId });
+  if (error) return { error: "Hinzufügen fehlgeschlagen." };
+
+  return { ok: true };
+}
+
+export async function removeItemFromPresetAction(
+  presetId: string,
+  itemId: string
+): Promise<PresetOpResult> {
+  const parsed = presetItemSchema.safeParse({ presetId, itemId });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe." };
+
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
+
+  const { data: preset } = await supabase
+    .from("bike_presets")
+    .select("id")
+    .eq("id", parsed.data.presetId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!preset) return { error: "Preset nicht gefunden." };
+
+  const { error } = await supabase
+    .from("preset_items")
+    .delete()
+    .eq("preset_id", parsed.data.presetId)
+    .eq("item_id", parsed.data.itemId);
+  if (error) return { error: "Entfernen fehlgeschlagen." };
+
+  return { ok: true };
 }
 
 export async function renamePresetAction(

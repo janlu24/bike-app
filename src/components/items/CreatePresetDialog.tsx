@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { createPresetAction } from "@/app/(app)/garage/actions";
 import type { BikePresetRow } from "@/types/supabase";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,17 +20,20 @@ interface CreatePresetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bikeId: string;
-  onCreated: (preset: BikePresetRow) => void;
+  currentPartCount?: number;
+  onCreated: (preset: BikePresetRow, wasSnapshotted: boolean) => void;
 }
 
 export function CreatePresetDialog({
   open,
   onOpenChange,
   bikeId,
+  currentPartCount = 0,
   onCreated,
 }: CreatePresetDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [snapshot, setSnapshot] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -38,6 +42,7 @@ export function CreatePresetDialog({
     if (!next) {
       setName("");
       setDescription("");
+      setSnapshot(true);
       setError(null);
     }
     onOpenChange(next);
@@ -46,12 +51,13 @@ export function CreatePresetDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const useSnapshot = snapshot && currentPartCount > 0;
     startTransition(async () => {
-      const result = await createPresetAction(bikeId, name.trim(), description.trim() || null);
+      const result = await createPresetAction(bikeId, name.trim(), description.trim() || null, useSnapshot);
       if ("error" in result) {
         setError(result.error);
       } else {
-        onCreated(result.preset);
+        onCreated(result.preset, useSnapshot);
         handleOpenChange(false);
       }
     });
@@ -110,6 +116,33 @@ export function CreatePresetDialog({
               className="resize-none border-cockpit-border bg-cockpit-bg text-cockpit-text placeholder:text-cockpit-muted/50 focus-visible:ring-petrol-500"
             />
           </div>
+
+          {currentPartCount > 0 ? (
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-md border border-cockpit-border/60 px-3 py-2.5">
+              <Checkbox
+                id="snapshot-checkbox"
+                checked={snapshot}
+                onCheckedChange={(v) => setSnapshot(v === true)}
+                disabled={isPending}
+                className="border-cockpit-border data-[state=checked]:border-petrol-600 data-[state=checked]:bg-petrol-700"
+              />
+              <div>
+                <p className="text-xs text-cockpit-text">
+                  Aktuellen Aufbau übernehmen
+                  <span className="ml-1 text-cockpit-muted">({currentPartCount} {currentPartCount === 1 ? "Item" : "Items"})</span>
+                </p>
+                {!snapshot && (
+                  <p className="mt-0.5 text-[10px] text-cockpit-muted">
+                    Leeres Preset — füge Teile später im Bearbeitungsmodus hinzu.
+                  </p>
+                )}
+              </div>
+            </label>
+          ) : (
+            <p className="rounded-md border border-dashed border-cockpit-border/50 px-3 py-2 text-[11px] text-cockpit-muted">
+              Leeres Preset — füge Teile später im Bearbeitungsmodus hinzu.
+            </p>
+          )}
 
           {error && (
             <p role="alert" className="text-xs text-red-400">

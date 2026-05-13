@@ -16,18 +16,19 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertTriangle,
   Check,
   GitBranch,
   Pencil,
   Play,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
 import { ApplyPresetDialog } from "./ApplyPresetDialog";
 import { CreatePresetDialog } from "./CreatePresetDialog";
+import { PresetSandboxSheet } from "./PresetSandboxSheet";
 
 interface PresetPanelProps {
   bikeId: string;
@@ -46,12 +47,16 @@ export function PresetPanel({
   const [createOpen, setCreateOpen] = useState(false);
 
   const currentPartIdSet = new Set(currentPartIds);
-  const hasCurrentParts = currentPartIds.length > 0;
 
-  function handleCreated(preset: BikePresetRow) {
+  function handleCreated(preset: BikePresetRow, wasSnapshotted: boolean) {
     setPresets((prev) => [
       ...prev,
-      { ...preset, preset_items: currentPartIds.map((id) => ({ item_id: id })) },
+      {
+        ...preset,
+        preset_items: wasSnapshotted
+          ? currentPartIds.map((id) => ({ item_id: id }))
+          : [],
+      },
     ]);
   }
 
@@ -65,6 +70,16 @@ export function PresetPanel({
 
   function handleApplied(diff: PresetApplyDiff) {
     onPresetApplied(diff);
+  }
+
+  function handleItemsChanged(presetId: string, newItemIds: string[]) {
+    setPresets((prev) =>
+      prev.map((p) =>
+        p.id === presetId
+          ? { ...p, preset_items: newItemIds.map((id) => ({ item_id: id })) }
+          : p
+      )
+    );
   }
 
   return (
@@ -83,32 +98,15 @@ export function PresetPanel({
           <span className="text-[11px] text-cockpit-muted">· {presets.length}</span>
         </div>
 
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!hasCurrentParts}
-                  onClick={() => setCreateOpen(true)}
-                  className="h-7 border-cockpit-border px-2.5 text-xs text-cockpit-muted hover:border-petrol-600 hover:text-petrol-300 disabled:pointer-events-none disabled:opacity-40"
-                >
-                  <GitBranch size={11} strokeWidth={1.75} aria-hidden className="mr-1.5" />
-                  Als Preset speichern
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {!hasCurrentParts && (
-              <TooltipContent
-                side="top"
-                className="border-cockpit-border bg-cockpit-surface text-xs text-cockpit-muted"
-              >
-                Füge zuerst Komponenten hinzu
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setCreateOpen(true)}
+          className="h-7 border-cockpit-border px-2.5 text-xs text-cockpit-muted hover:border-petrol-600 hover:text-petrol-300"
+        >
+          <GitBranch size={11} strokeWidth={1.75} aria-hidden className="mr-1.5" />
+          Als Preset speichern
+        </Button>
       </header>
 
       {presets.length === 0 ? (
@@ -127,6 +125,7 @@ export function PresetPanel({
               onRenamed={handleRenamed}
               onDeleted={handleDeleted}
               onApplied={handleApplied}
+              onItemsChanged={handleItemsChanged}
             />
           ))}
         </ul>
@@ -136,6 +135,7 @@ export function PresetPanel({
         open={createOpen}
         onOpenChange={setCreateOpen}
         bikeId={bikeId}
+        currentPartCount={currentPartIds.length}
         onCreated={handleCreated}
       />
     </section>
@@ -148,12 +148,14 @@ function PresetCard({
   onRenamed,
   onDeleted,
   onApplied,
+  onItemsChanged,
 }: {
   preset: BikePresetWithItems;
   currentPartIdSet: Set<string>;
   onRenamed: (id: string, name: string) => void;
   onDeleted: (id: string) => void;
   onApplied: (diff: PresetApplyDiff) => void;
+  onItemsChanged: (presetId: string, newItemIds: string[]) => void;
 }) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(preset.name);
@@ -166,6 +168,7 @@ function PresetCard({
   const [isDeletePending, startDeleteTransition] = useTransition();
 
   const [applyOpen, setApplyOpen] = useState(false);
+  const [sandboxOpen, setSandboxOpen] = useState(false);
 
   const presetItemCount = preset.preset_items.length;
   const matchesCurrentBuild =
@@ -289,6 +292,14 @@ function PresetCard({
               <Play size={11} strokeWidth={1.75} aria-hidden />
             </IconButton>
             <IconButton
+              aria-label="Preset bearbeiten"
+              title="Bearbeiten"
+              onClick={() => setSandboxOpen(true)}
+              className="text-cockpit-muted hover:border-amber-700/60 hover:text-amber-300"
+            >
+              <SlidersHorizontal size={11} strokeWidth={1.75} aria-hidden />
+            </IconButton>
+            <IconButton
               aria-label="Preset umbenennen"
               title="Umbenennen"
               onClick={startRename}
@@ -403,6 +414,14 @@ function PresetCard({
           setApplyOpen(false);
           onApplied(diff);
         }}
+      />
+
+      {/* Sandbox Edit Sheet */}
+      <PresetSandboxSheet
+        open={sandboxOpen}
+        onOpenChange={setSandboxOpen}
+        preset={preset}
+        onPresetItemsChanged={onItemsChanged}
       />
     </li>
   );

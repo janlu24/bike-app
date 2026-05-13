@@ -28,3 +28,8 @@ export const presetIdSchema = z.object({
 export const applyPresetSchema = z.object({
   presetId: z.string().uuid("Ungültige Preset-ID."),
 });
+
+export const presetItemSchema = z.object({
+  presetId: z.string().uuid("Ungültige Preset-ID."),
+  itemId: z.string().uuid("Ungültige Item-ID."),
+});
