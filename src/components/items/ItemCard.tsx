@@ -4,18 +4,19 @@ import { CATEGORY_CONFIG } from "@/lib/items/categories";
 import { cn } from "@/lib/utils";
 import { formatWeight } from "@/lib/utils/weight";
 import type { ItemRow } from "@/types/supabase";
-import { ChevronDown, Eye, EyeOff, Link2, Pencil } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 interface ItemCardProps {
   item: ItemRow;
   parent?: { id: string; brand: string; model: string | null } | null;
+  headerActions?: React.ReactNode;
 }
 
 const COLLAPSED_LIMIT = 3;
 
-export function ItemCard({ item, parent }: ItemCardProps) {
+export function ItemCard({ item, parent, headerActions }: ItemCardProps) {
   const config = CATEGORY_CONFIG[item.category];
   const Icon = config.icon;
   const allEntries = Object.entries(
@@ -72,12 +73,15 @@ export function ItemCard({ item, parent }: ItemCardProps) {
               <p className="text-xs text-cockpit-muted">{item.model}</p>
             </div>
           </div>
-          <div
-            className="flex items-center gap-1 text-cockpit-muted"
-            title={item.is_public ? "Öffentlich sichtbar" : "Privat"}
-            aria-label={item.is_public ? "Öffentlich" : "Privat"}
-          >
-            <VisibilityIcon size={14} strokeWidth={1.75} aria-hidden />
+          <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-1 text-cockpit-muted"
+              title={item.is_public ? "Öffentlich sichtbar" : "Privat"}
+              aria-label={item.is_public ? "Öffentlich" : "Privat"}
+            >
+              <VisibilityIcon size={14} strokeWidth={1.75} aria-hidden />
+            </div>
+            {headerActions}
           </div>
         </header>
 
@@ -146,11 +150,11 @@ export function ItemCard({ item, parent }: ItemCardProps) {
 
         <footer className="mt-auto flex justify-end">
           <Link
-            href={`/garage/${item.id}/edit`}
+            href={`/garage/${item.id}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
           >
-            <Pencil size={12} strokeWidth={1.75} aria-hidden />
-            Bearbeiten
+            <Eye size={12} strokeWidth={1.75} aria-hidden />
+            Ansehen
           </Link>
         </footer>
       </div>

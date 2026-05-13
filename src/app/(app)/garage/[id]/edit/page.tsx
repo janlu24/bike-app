@@ -1,8 +1,9 @@
 import { DeleteItemForm, ItemForm } from "@/components/items/ItemForm";
-import { ItemTourHistory } from "@/components/items/ItemTourHistory";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BikeOption, GroupRow, ItemRow } from "@/types/supabase";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,6 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
         .order("created_at", { ascending: false })
     ).data ?? [];
 
-  // If the item is linked to a group, resolve its name for the badge.
   let groupName: string | undefined;
   if (item.group_id) {
     const { data: grp } = await supabase
@@ -53,24 +53,31 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
-            Item bearbeiten
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {item.brand}{" "}
-            <span className="text-petrol-400">{item.model}</span>
-          </h1>
+      <div>
+        <Link
+          href={`/garage/${id}`}
+          className="inline-flex items-center gap-1 text-xs text-cockpit-muted transition-colors hover:text-cockpit-text"
+        >
+          <ChevronLeft size={14} strokeWidth={1.75} aria-hidden />
+          Zurück zur Detailansicht
+        </Link>
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">
+              Item bearbeiten
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {item.brand}{" "}
+              <span className="text-petrol-400">{item.model}</span>
+            </h1>
+          </div>
+          <DeleteItemForm item={item} />
         </div>
-        <DeleteItemForm item={item} />
       </div>
 
       <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-5 shadow-cockpit">
         <ItemForm item={item} bikes={bikes} groupName={groupName} />
       </div>
-
-      <ItemTourHistory itemId={id} />
     </div>
   );
 }

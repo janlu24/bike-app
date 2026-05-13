@@ -82,6 +82,7 @@ export type Database = {
           brand: string
           category: Database["public"]["Enums"]["item_category"]
           created_at: string
+          general_note: string | null
           group_id: string | null
           id: string
           image_url: string | null
@@ -97,6 +98,7 @@ export type Database = {
           brand: string
           category: Database["public"]["Enums"]["item_category"]
           created_at?: string
+          general_note?: string | null
           group_id?: string | null
           id?: string
           image_url?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           brand?: string
           category?: Database["public"]["Enums"]["item_category"]
           created_at?: string
+          general_note?: string | null
           group_id?: string | null
           id?: string
           image_url?: string | null
@@ -450,17 +453,3 @@ export const Constants = {
     },
   },
 } as const
-
-// ---------------------------------------------------------------------------
-// Convenience aliases — derived from generated types
-// ---------------------------------------------------------------------------
-export type ItemRow = Tables<"items">;
-export type GroupRow = Tables<"item_groups">;
-export type ProfileRow = Tables<"profiles">;
-export type TourRow = Tables<"tours">;
-export type TourItemRow = Tables<"tour_items">;
-
-export type ItemCategory = Enums<"item_category">;
-export type TourStatus = Enums<"tour_status">;
-
-export type BikeOption = Pick<ItemRow, "id" | "brand" | "model">;

@@ -187,9 +187,9 @@ export function TourPacklist({ tourId, entries, childItemMap, childFeedbackMap, 
 
                       <div className="flex-1 min-w-0">
                         <Link
-                          href={`/garage/${item.id}/edit`}
+                          href={`/garage/${item.id}`}
                           className="text-sm font-medium text-cockpit-text hover:text-petrol-300 transition-colors truncate block"
-                          aria-label={`${itemLabel} in der Garage bearbeiten`}
+                          aria-label={`${itemLabel} in der Garage ansehen`}
                         >
                           {itemLabel}
                         </Link>
@@ -280,9 +280,9 @@ export function TourPacklist({ tourId, entries, childItemMap, childFeedbackMap, 
                                   <ChildIcon size={13} strokeWidth={1.75} aria-hidden className="text-petrol-400" />
                                 </span>
                                 <Link
-                                  href={`/garage/${child.id}/edit`}
+                                  href={`/garage/${child.id}`}
                                   className="flex-1 min-w-0 text-xs text-cockpit-muted hover:text-petrol-300 transition-colors truncate"
-                                  aria-label={`${childLabel} in der Garage bearbeiten`}
+                                  aria-label={`${childLabel} in der Garage ansehen`}
                                 >
                                   {childLabel}
                                 </Link>

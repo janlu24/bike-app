@@ -1,20 +1,60 @@
+"use client";
+
+import { useTransition, useState } from "react";
+import { unlinkComponentFromBikeAction } from "@/app/(app)/garage/actions";
 import { CATEGORY_CONFIG } from "@/lib/items/categories";
 import type { BuildSummary } from "@/lib/items/build";
 import { formatWeight } from "@/lib/utils/weight";
-import { Eye, EyeOff, Pencil, Scale, Wrench } from "lucide-react";
+import type { ItemRow } from "@/types/supabase";
+import { Eye, EyeOff, GitBranch, Scale, Unlink, Wrench } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "./EmptyState";
 import { ItemCard } from "./ItemCard";
+import { ItemPickerSheet } from "./ItemPickerSheet";
 
 interface BuildViewProps {
   build: BuildSummary;
+  availableParts: ItemRow[];
 }
 
-export function BuildView({ build }: BuildViewProps) {
+export function BuildView({ build: initialBuild, availableParts: initialAvailable }: BuildViewProps) {
+  const [build, setBuild] = useState(initialBuild);
+  const [availableParts, setAvailableParts] = useState(initialAvailable);
+
   const { bike, parts, totalWeight, partCount, hasUnknownWeight } = build;
   const bikeConfig = CATEGORY_CONFIG[bike.category];
   const BikeIcon = bikeConfig.icon;
   const VisibilityIcon = bike.is_public ? Eye : EyeOff;
+
+  function handleLinked(itemId: string) {
+    const linked = availableParts.find((p) => p.id === itemId);
+    if (!linked) return;
+    setBuild((prev) => ({
+      ...prev,
+      parts: [...prev.parts, { ...linked, parent_id: bike.id }],
+      partCount: prev.partCount + 1,
+      totalWeight: linked.weight_g !== null ? prev.totalWeight + linked.weight_g : prev.totalWeight,
+      hasUnknownWeight: prev.hasUnknownWeight || linked.weight_g === null,
+    }));
+    setAvailableParts((prev) => prev.filter((p) => p.id !== itemId));
+  }
+
+  function handleUnlinked(itemId: string) {
+    const removed = parts.find((p) => p.id === itemId);
+    if (!removed) return;
+    setBuild((prev) => {
+      const nextParts = prev.parts.filter((p) => p.id !== itemId);
+      const nextHasUnknown = nextParts.some((p) => p.weight_g === null) || bike.weight_g === null;
+      return {
+        ...prev,
+        parts: nextParts,
+        partCount: prev.partCount - 1,
+        totalWeight: removed.weight_g !== null ? prev.totalWeight - removed.weight_g : prev.totalWeight,
+        hasUnknownWeight: nextHasUnknown,
+      };
+    });
+    setAvailableParts((prev) => [...prev, { ...removed, parent_id: null }]);
+  }
 
   return (
     <div className="space-y-5">
@@ -67,11 +107,11 @@ export function BuildView({ build }: BuildViewProps) {
               {bike.is_public ? "Öffentlich" : "Privat"}
             </span>
             <Link
-              href={`/garage/${bike.id}/edit`}
+              href={`/garage/${bike.id}`}
               className="inline-flex items-center gap-1.5 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
             >
-              <Pencil size={12} strokeWidth={1.75} aria-hidden />
-              Bearbeiten
+              <Eye size={12} strokeWidth={1.75} aria-hidden />
+              Ansehen
             </Link>
           </div>
         </div>
@@ -105,14 +145,9 @@ export function BuildView({ build }: BuildViewProps) {
         />
       </dl>
 
-      {parts.length === 0 ? (
-        <EmptyState
-          filtered
-          hint="Noch keine Komponenten verbaut. Ordne Parts diesem Bike zu, um den Build zu vervollständigen."
-        />
-      ) : (
-        <section className="space-y-3">
-          <header className="flex items-center gap-2">
+      <section className="space-y-3">
+        <header className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <Wrench
               size={14}
               strokeWidth={1.75}
@@ -125,15 +160,93 @@ export function BuildView({ build }: BuildViewProps) {
             <span className="text-[11px] text-cockpit-muted">
               · {partCount}
             </span>
-          </header>
+          </div>
+          <ItemPickerSheet
+            bikeId={bike.id}
+            availableParts={availableParts}
+            onLinked={handleLinked}
+          />
+        </header>
+
+        {parts.length === 0 ? (
+          <EmptyState
+            filtered
+            hint="Noch keine Komponenten verbaut. Füge Parts über 'Komponente hinzufügen' hinzu."
+          />
+        ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {parts.map((part) => (
-              <ItemCard key={part.id} item={part} />
+              <ItemCard
+                key={part.id}
+                item={part}
+                headerActions={
+                  <UnlinkButton itemId={part.id} onUnlinked={handleUnlinked} />
+                }
+              />
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
+
+      {/* Presets placeholder */}
+      <section
+        aria-label="Presets (demnächst verfügbar)"
+        className="rounded-lg border border-cockpit-border/50 border-dashed bg-cockpit-surface/30 px-5 py-6"
+      >
+        <div className="flex items-center gap-2.5 text-cockpit-muted">
+          <GitBranch size={16} strokeWidth={1.75} aria-hidden />
+          <div>
+            <p className="text-sm font-medium">Presets</p>
+            <p className="text-xs">
+              Speichere verschiedene Aufbauvarianten für dieses Bike.{" "}
+              <span className="rounded bg-petrol-900/60 px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-petrol-400">
+                Coming Soon
+              </span>
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
+  );
+}
+
+function UnlinkButton({
+  itemId,
+  onUnlinked,
+}: {
+  itemId: string;
+  onUnlinked: (id: string) => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function handleUnlink() {
+    setError(null);
+    startTransition(async () => {
+      const result = await unlinkComponentFromBikeAction(itemId);
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        onUnlinked(itemId);
+      }
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleUnlink}
+      disabled={isPending}
+      title={error ?? "Vom Bike lösen"}
+      aria-label="Komponente vom Bike lösen"
+      className="flex h-5 w-5 items-center justify-center rounded border border-cockpit-border/60 text-cockpit-muted/60 transition-colors hover:border-red-800/60 hover:text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-petrol-500 disabled:opacity-50"
+    >
+      {isPending ? (
+        <span className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
+      ) : (
+        <Unlink size={10} strokeWidth={1.75} aria-hidden />
+      )}
+    </button>
   );
 }
 

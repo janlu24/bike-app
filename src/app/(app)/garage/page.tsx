@@ -100,7 +100,12 @@ export default async function GaragePage({ searchParams }: GaragePageProps) {
       <BikeSelector bikes={bikeOptions} activeBikeId={buildMode ? activeBike!.id : null} />
 
       {buildMode ? (
-        <BuildView build={computeBuild(activeBike!, items)} />
+        <BuildView
+          build={computeBuild(activeBike!, items)}
+          availableParts={items.filter(
+            (i) => i.category !== "Bike" && i.parent_id === null
+          )}
+        />
       ) : (
         <>
           <CategoryFilter basePath="/garage" active={activeCategory} counts={counts} />

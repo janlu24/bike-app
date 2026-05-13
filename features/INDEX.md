@@ -26,8 +26,10 @@
 | PROJ-10 | Refactoring & Groups Enhancement | Approved | [PROJ-10-refactoring-groups-enhancement.md](PROJ-10-refactoring-groups-enhancement.md) | 2026-05-09 |
 | PROJ-11 | Tour Management & Packliste | Approved | [PROJ-11-tour-management-packliste.md](PROJ-11-tour-management-packliste.md) | 2026-05-09 |
 | PROJ-12 | Tour Item Feedback & Garage History | Approved | [PROJ-12-tour-item-feedback-garage-history.md](PROJ-12-tour-item-feedback-garage-history.md) | 2026-05-09 |
-| PROJ-13 | Item View/Edit Split | Planned | [PROJ-13-item-view-edit-split.md](PROJ-13-item-view-edit-split.md) | 2026-05-12 |
+| PROJ-13 | Item View/Edit Split | Approved | [PROJ-13-item-view-edit-split.md](PROJ-13-item-view-edit-split.md) | 2026-05-12 |
+| PROJ-14 | Bike Versioning System | Approved | [PROJ-14-bike-versioning-system.md](PROJ-14-bike-versioning-system.md) | 2026-05-13 |
+| PROJ-15 | Bike Preset Manager & Tour Integration | In Progress | [PROJ-15-bike-preset-manager.md](PROJ-15-bike-preset-manager.md) | 2026-05-13 |
 
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-14
+## Next Available ID: PROJ-16

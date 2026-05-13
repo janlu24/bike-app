@@ -126,3 +126,69 @@ describe("computeBuild — output structure", () => {
     expect(() => computeBuild(b, input)).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// PROJ-14: Nested / recursive weight (PROJ-11/12 sub-items)
+// ---------------------------------------------------------------------------
+describe("computeBuild — nested weight (PROJ-14)", () => {
+  it("includes grandchild weights in totalWeight", () => {
+    const b = bike(5000);
+    const p1 = part("p1", 500);
+    const child = makeItem("child1", "p1", 100);
+    const result = computeBuild(b, [b, p1, child]);
+    expect(result.totalWeight).toBe(5600);
+  });
+
+  it("parts list only contains first-level children, not grandchildren", () => {
+    const b = bike(5000);
+    const p1 = part("p1", 500);
+    const child = makeItem("child1", "p1", 100);
+    const result = computeBuild(b, [b, p1, child]);
+    expect(result.parts).toHaveLength(1);
+    expect(result.parts[0].id).toBe("p1");
+  });
+
+  it("handles three levels of nesting correctly", () => {
+    const b = bike(1000);
+    const p1 = part("p1", 100);
+    const p2 = makeItem("p2", "p1", 50);
+    const p3 = makeItem("p3", "p2", 25);
+    const result = computeBuild(b, [b, p1, p2, p3]);
+    expect(result.totalWeight).toBe(1175);
+  });
+
+  it("does not count sub-items of foreign bikes", () => {
+    const b = bike(2000);
+    const other = makeItem("bike2", null, 1000);
+    const foreignPart = makeItem("fp", "bike2", 500);
+    const foreignChild = makeItem("fc", "fp", 100);
+    const result = computeBuild(b, [b, other, foreignPart, foreignChild]);
+    expect(result.parts).toHaveLength(0);
+    expect(result.totalWeight).toBe(2000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PROJ-14: Cycle guard
+// ---------------------------------------------------------------------------
+describe("computeBuild — cycle guard (PROJ-14)", () => {
+  it("does not throw on circular parent_id references", () => {
+    const b = bike(1000);
+    const pa = makeItem("pa", BIKE_ID, 100);
+    const pb = makeItem("pb", "pa", 50);
+    // Circular: pb's child points back to pa
+    const pc = makeItem("pc", "pb", 25);
+    const pcCycle = { ...pc, parent_id: "pa" };
+    const items = [b, pa, pb, pcCycle];
+    expect(() => computeBuild(b, items)).not.toThrow();
+  });
+
+  it("returns finite totalWeight even with cycles", () => {
+    const b = bike(1000);
+    const pa = makeItem("pa", BIKE_ID, 100);
+    const pb = makeItem("pb", "pa", 50);
+    const pcCycle = makeItem("pa", "pb", 25); // id collision forces cycle
+    const result = computeBuild(b, [b, pa, pb, pcCycle]);
+    expect(Number.isFinite(result.totalWeight)).toBe(true);
+  });
+});

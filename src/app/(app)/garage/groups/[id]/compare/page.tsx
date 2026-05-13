@@ -152,7 +152,7 @@ export default async function CompareGroupPage({ params }: ComparePageProps) {
                   className="bg-cockpit-surface text-xs font-medium text-cockpit-text"
                 >
                   <Link
-                    href={`/garage/${item.id}/edit`}
+                    href={`/garage/${item.id}`}
                     className="hover:text-petrol-400"
                   >
                     {item.brand}

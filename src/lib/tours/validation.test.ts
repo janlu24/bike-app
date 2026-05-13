@@ -314,6 +314,7 @@ describe("parseTourInput — full valid form", () => {
       duration_hours: 4,
       duration_minutes: 30,
       is_public: true,
+      preset_id: null,
     });
   });
 

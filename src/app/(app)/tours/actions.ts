@@ -56,6 +56,7 @@ export async function createTourAction(
       duration_hours: parsed.data.duration_hours,
       duration_minutes: parsed.data.duration_minutes,
       is_public: parsed.data.is_public,
+      preset_id: parsed.data.preset_id,
     })
     .select("id")
     .single();
@@ -106,6 +107,7 @@ export async function updateTourAction(
       duration_hours: parsed.data.duration_hours,
       duration_minutes: parsed.data.duration_minutes,
       is_public: parsed.data.is_public,
+      preset_id: parsed.data.preset_id,
     })
     .eq("id", tourId)
     .eq("user_id", user.id);

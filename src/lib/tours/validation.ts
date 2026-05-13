@@ -25,6 +25,7 @@ export interface TourInput {
   duration_hours: number | null;
   duration_minutes: number | null;
   is_public: boolean;
+  preset_id: string | null;
 }
 
 export type TourFieldError =
@@ -91,6 +92,8 @@ export function parseTourInput(formData: FormData): TourValidationResult {
   const destination = sanitize(formData.get("destination")) || null;
   const rawStatus = sanitize(formData.get("status"));
   const isPublic = formData.get("is_public") === "on";
+  const rawPresetId = sanitize(formData.get("preset_id"));
+  const preset_id = rawPresetId && UUID_RE.test(rawPresetId) ? rawPresetId : null;
 
   // name
   if (name.length === 0) {
@@ -180,6 +183,7 @@ export function parseTourInput(formData: FormData): TourValidationResult {
       duration_hours: durationHours.value,
       duration_minutes: durationMinutes.value,
       is_public: isPublic,
+      preset_id,
     },
     fieldErrors: {},
   };
