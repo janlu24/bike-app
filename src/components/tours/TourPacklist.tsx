@@ -11,6 +11,7 @@ import { removeTourItemAction } from "@/app/(app)/tours/actions";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
 import { formatWeight } from "@/lib/utils/weight";
 import type { ItemCategory, ItemRow } from "@/types/supabase";
+import { Badge } from "@/components/ui/badge";
 import { Scale, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
 interface PacklistEntry {
@@ -29,6 +30,8 @@ interface TourPacklistProps {
   childFeedbackMap: Map<string, { rating: number | null; note: string | null }>;
   garageItems: ItemRow[];
   isOwner: boolean;
+  /** Map of bike item ID → preset name; when present, children come from the preset, not live parent_id. */
+  presetBadgeMap?: Map<string, string>;
 }
 
 const ALL_TAB = "all";
@@ -51,7 +54,7 @@ function sumAllWeights(entries: PacklistEntry[], childItemMap: Map<string, ItemR
   return hasAny ? total : null;
 }
 
-export function TourPacklist({ tourId, entries, childItemMap, childFeedbackMap, garageItems, isOwner }: TourPacklistProps) {
+export function TourPacklist({ tourId, entries, childItemMap, childFeedbackMap, garageItems, isOwner, presetBadgeMap }: TourPacklistProps) {
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -161,6 +164,7 @@ export function TourPacklist({ tourId, entries, childItemMap, childFeedbackMap, 
                 const isRemoving = removing === item.id && isPending;
                 // Only bikes have mounted child items in the childItemMap.
                 const children = item.category === "Bike" ? (childItemMap.get(item.id) ?? []) : [];
+                const presetName = presetBadgeMap?.get(item.id) ?? null;
                 const itemLabel = `${item.brand}${item.model ? ` ${item.model}` : ""}`;
                 const hasFeedback = rating !== null || (note !== null && note.length > 0);
                 const isNoteExpanded = expandedNotes.has(tourItemId);
@@ -186,13 +190,23 @@ export function TourPacklist({ tourId, entries, childItemMap, childFeedbackMap, 
                       )}
 
                       <div className="flex-1 min-w-0">
-                        <Link
-                          href={`/garage/${item.id}`}
-                          className="text-sm font-medium text-cockpit-text hover:text-petrol-300 transition-colors truncate block"
-                          aria-label={`${itemLabel} in der Garage ansehen`}
-                        >
-                          {itemLabel}
-                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            href={`/garage/${item.id}`}
+                            className="text-sm font-medium text-cockpit-text hover:text-petrol-300 transition-colors truncate"
+                            aria-label={`${itemLabel} in der Garage ansehen`}
+                          >
+                            {itemLabel}
+                          </Link>
+                          {presetName && (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 border-amber-700/60 bg-amber-950/30 px-1.5 py-0 text-[9px] font-normal text-amber-300"
+                            >
+                              Preset: {presetName}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-cockpit-muted flex items-center gap-2">
                           <span>{config.label}</span>
                           {item.weight_g !== null && (

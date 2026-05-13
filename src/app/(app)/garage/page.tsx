@@ -6,7 +6,7 @@ import { ItemCard } from "@/components/items/ItemCard";
 import { computeBuild } from "@/lib/items/build";
 import { CATEGORY_CONFIG, ITEM_CATEGORIES, isItemCategory } from "@/lib/items/categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { BikeOption, ItemCategory, ItemRow } from "@/types/supabase";
+import type { BikeOption, BikePresetWithItems, ItemCategory, ItemRow } from "@/types/supabase";
 import { LayoutTemplate, Plus } from "lucide-react";
 import Link from "next/link";
 
@@ -46,6 +46,17 @@ export default async function GaragePage({ searchParams }: GaragePageProps) {
       ? (items.find((i) => i.id === requestedBikeId && i.category === "Bike") ?? null)
       : null;
   const buildMode = activeBike !== null;
+
+  let initialPresets: BikePresetWithItems[] = [];
+  if (buildMode && user) {
+    const { data: presetsData } = await supabase
+      .from("bike_presets")
+      .select("*, preset_items(item_id)")
+      .eq("bike_id", activeBike!.id)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+    initialPresets = (presetsData ?? []) as BikePresetWithItems[];
+  }
 
   const counts: Partial<Record<ItemCategory | "all", number>> = { all: items.length };
   for (const cat of ITEM_CATEGORIES) {
@@ -105,6 +116,7 @@ export default async function GaragePage({ searchParams }: GaragePageProps) {
           availableParts={items.filter(
             (i) => i.category !== "Bike" && i.parent_id === null
           )}
+          initialPresets={initialPresets}
         />
       ) : (
         <>

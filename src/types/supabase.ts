@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      bike_presets: {
+        Row: {
+          bike_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          bike_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          bike_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bike_presets_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_groups: {
         Row: {
           category: Database["public"]["Enums"]["item_category"]
@@ -186,6 +221,36 @@ export type Database = {
         }
         Relationships: []
       }
+      preset_items: {
+        Row: {
+          item_id: string
+          preset_id: string
+        }
+        Insert: {
+          item_id: string
+          preset_id: string
+        }
+        Update: {
+          item_id?: string
+          preset_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preset_items_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "bike_presets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preset_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tour_items: {
         Row: {
           added_at: string
@@ -248,6 +313,7 @@ export type Database = {
           planned_elevation_up_m: number | null
           start_date: string | null
           start_location: string | null
+          preset_id: string | null
           status: Database["public"]["Enums"]["tour_status"]
           updated_at: string
           user_id: string
@@ -269,6 +335,7 @@ export type Database = {
           planned_distance_km?: number | null
           planned_elevation_down_m?: number | null
           planned_elevation_up_m?: number | null
+          preset_id?: string | null
           start_date?: string | null
           start_location?: string | null
           status?: Database["public"]["Enums"]["tour_status"]
@@ -292,6 +359,7 @@ export type Database = {
           planned_distance_km?: number | null
           planned_elevation_down_m?: number | null
           planned_elevation_up_m?: number | null
+          preset_id?: string | null
           start_date?: string | null
           start_location?: string | null
           status?: Database["public"]["Enums"]["tour_status"]
@@ -299,6 +367,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tours_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "bike_presets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tours_user_id_fkey"
             columns: ["user_id"]
@@ -453,3 +528,20 @@ export const Constants = {
     },
   },
 } as const
+
+// ---------------------------------------------------------------------------
+// Convenience aliases — derived from generated types
+// ---------------------------------------------------------------------------
+export type ItemRow = Tables<"items">;
+export type GroupRow = Tables<"item_groups">;
+export type ProfileRow = Tables<"profiles">;
+export type TourRow = Tables<"tours">;
+export type TourItemRow = Tables<"tour_items">;
+export type BikePresetRow = Tables<"bike_presets">;
+export type PresetItemRow = Tables<"preset_items">;
+
+export type ItemCategory = Enums<"item_category">;
+export type TourStatus = Enums<"tour_status">;
+
+export type BikeOption = { id: string; brand: string; model: string | null };
+export type BikePresetWithItems = BikePresetRow & { preset_items: { item_id: string }[] };

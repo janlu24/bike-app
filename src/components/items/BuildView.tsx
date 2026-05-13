@@ -2,22 +2,25 @@
 
 import { useTransition, useState } from "react";
 import { unlinkComponentFromBikeAction } from "@/app/(app)/garage/actions";
+import type { PresetApplyDiff } from "@/app/(app)/garage/actions";
 import { CATEGORY_CONFIG } from "@/lib/items/categories";
 import type { BuildSummary } from "@/lib/items/build";
 import { formatWeight } from "@/lib/utils/weight";
-import type { ItemRow } from "@/types/supabase";
-import { Eye, EyeOff, GitBranch, Scale, Unlink, Wrench } from "lucide-react";
+import type { BikePresetWithItems, ItemRow } from "@/types/supabase";
+import { Eye, EyeOff, Scale, Unlink, Wrench } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "./EmptyState";
 import { ItemCard } from "./ItemCard";
 import { ItemPickerSheet } from "./ItemPickerSheet";
+import { PresetPanel } from "./PresetPanel";
 
 interface BuildViewProps {
   build: BuildSummary;
   availableParts: ItemRow[];
+  initialPresets: BikePresetWithItems[];
 }
 
-export function BuildView({ build: initialBuild, availableParts: initialAvailable }: BuildViewProps) {
+export function BuildView({ build: initialBuild, availableParts: initialAvailable, initialPresets }: BuildViewProps) {
   const [build, setBuild] = useState(initialBuild);
   const [availableParts, setAvailableParts] = useState(initialAvailable);
 
@@ -54,6 +57,35 @@ export function BuildView({ build: initialBuild, availableParts: initialAvailabl
       };
     });
     setAvailableParts((prev) => [...prev, { ...removed, parent_id: null }]);
+  }
+
+  function handlePresetApplied({ toUnlink, toLink, conflicts }: PresetApplyDiff) {
+    setBuild((prev) => {
+      const unlinkedIds = new Set(toUnlink.map((i) => i.id));
+      const partsAfterUnlink = prev.parts.filter((p) => !unlinkedIds.has(p.id));
+      const partsAlreadyLinked = new Set(partsAfterUnlink.map((p) => p.id));
+      const newParts = [
+        ...toLink,
+        ...conflicts,
+      ].filter((i) => !partsAlreadyLinked.has(i.id)).map((i) => ({ ...i, parent_id: bike.id }));
+      const nextParts = [...partsAfterUnlink, ...newParts];
+      const nextWeight = (bike.weight_g ?? 0) + nextParts.reduce((sum, p) => sum + (p.weight_g ?? 0), 0);
+      const nextHasUnknown = nextParts.some((p) => p.weight_g === null) || bike.weight_g === null;
+      return {
+        ...prev,
+        parts: nextParts,
+        partCount: nextParts.length,
+        totalWeight: nextWeight,
+        hasUnknownWeight: nextHasUnknown,
+      };
+    });
+    setAvailableParts((prev) => {
+      const nowLinkedIds = new Set([...toLink, ...conflicts].map((i) => i.id));
+      return [
+        ...prev.filter((p) => !nowLinkedIds.has(p.id)),
+        ...toUnlink.map((i) => ({ ...i, parent_id: null })),
+      ];
+    });
   }
 
   return (
@@ -188,24 +220,12 @@ export function BuildView({ build: initialBuild, availableParts: initialAvailabl
         )}
       </section>
 
-      {/* Presets placeholder */}
-      <section
-        aria-label="Presets (demnächst verfügbar)"
-        className="rounded-lg border border-cockpit-border/50 border-dashed bg-cockpit-surface/30 px-5 py-6"
-      >
-        <div className="flex items-center gap-2.5 text-cockpit-muted">
-          <GitBranch size={16} strokeWidth={1.75} aria-hidden />
-          <div>
-            <p className="text-sm font-medium">Presets</p>
-            <p className="text-xs">
-              Speichere verschiedene Aufbauvarianten für dieses Bike.{" "}
-              <span className="rounded bg-petrol-900/60 px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-petrol-400">
-                Coming Soon
-              </span>
-            </p>
-          </div>
-        </div>
-      </section>
+      <PresetPanel
+        bikeId={bike.id}
+        initialPresets={initialPresets}
+        currentPartIds={parts.map((p) => p.id)}
+        onPresetApplied={handlePresetApplied}
+      />
     </div>
   );
 }

@@ -68,6 +68,33 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     }
   }
 
+  // Preset override: if tour has a preset_id, replace the bike's live children with preset items.
+  const presetBadgeMap = new Map<string, string>();
+  const tourRow = tour as TourRow;
+  if (tourRow.preset_id) {
+    const { data: preset } = await supabase
+      .from("bike_presets")
+      .select("id, name, bike_id, preset_items(item_id)")
+      .eq("id", tourRow.preset_id)
+      .maybeSingle();
+
+    if (preset) {
+      const presetItemIds = (preset.preset_items as { item_id: string }[]).map((pi) => pi.item_id);
+      if (presetItemIds.length > 0) {
+        const { data: presetItems } = await supabase
+          .from("items")
+          .select("*")
+          .in("id", presetItemIds);
+        childItemMap = new Map(childItemMap);
+        childItemMap.set(preset.bike_id, (presetItems ?? []) as ItemRow[]);
+      } else {
+        childItemMap = new Map(childItemMap);
+        childItemMap.set(preset.bike_id, []);
+      }
+      presetBadgeMap.set(preset.bike_id, preset.name);
+    }
+  }
+
   // Collect all child item IDs to load their feedback and deduplicate the main list.
   const allChildIds: string[] = [];
   for (const children of childItemMap.values()) {
@@ -103,8 +130,6 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
           .order("brand")
       ).data ?? [])
     : [];
-
-  const tourRow = tour as TourRow;
 
   const dateLabel =
     tourRow.end_date && tourRow.end_date !== tourRow.start_date
@@ -160,6 +185,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
         childFeedbackMap={childFeedbackMap}
         garageItems={garageItems}
         isOwner={isOwner}
+        presetBadgeMap={presetBadgeMap}
       />
     </div>
   );

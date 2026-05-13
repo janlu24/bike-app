@@ -1,25 +1,41 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import type { TourFormState } from "@/app/(app)/tours/schema";
 import type { TourRow } from "@/types/supabase";
 
+interface PresetGroup {
+  bikeLabel: string;
+  bikeId: string;
+  presets: { id: string; name: string }[];
+}
+
 interface TourFormProps {
   action: (prev: TourFormState, formData: FormData) => Promise<TourFormState>;
   initialData?: TourRow;
   submitLabel?: string;
+  allPresets?: PresetGroup[];
 }
 
 const empty: TourFormState = { data: null, fieldErrors: {} };
 
-export function TourForm({ action, initialData, submitLabel = "Speichern" }: TourFormProps) {
+export function TourForm({ action, initialData, submitLabel = "Speichern", allPresets }: TourFormProps) {
   const [state, formAction, pending] = useActionState(action, empty);
+  const [presetId, setPresetId] = useState<string>(initialData?.preset_id ?? "");
 
   return (
     <form action={formAction} className="space-y-6" noValidate>
@@ -273,6 +289,45 @@ export function TourForm({ action, initialData, submitLabel = "Speichern" }: Tou
           </div>
         </div>
       </section>
+
+      {allPresets && allPresets.some((g) => g.presets.length > 0) && (
+        <>
+          <Separator className="border-cockpit-border" />
+          <section className="space-y-3">
+            <h2 className="text-[11px] uppercase tracking-widest text-cockpit-muted">Setup</h2>
+            <div className="space-y-1.5">
+              <Label htmlFor="preset_select">Bike-Preset</Label>
+              <Select
+                value={presetId || "__none__"}
+                onValueChange={(v) => setPresetId(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger id="preset_select" aria-label="Bike-Preset auswählen">
+                  <SelectValue placeholder="Kein Preset" />
+                </SelectTrigger>
+                <SelectContent className="border-cockpit-border bg-cockpit-surface">
+                  <SelectItem value="__none__">Kein Preset</SelectItem>
+                  {allPresets.map((group) => (
+                    <SelectGroup key={group.bikeId}>
+                      <SelectLabel className="text-[10px] uppercase tracking-widest text-cockpit-muted">
+                        {group.bikeLabel}
+                      </SelectLabel>
+                      {group.presets.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-cockpit-muted">
+                Legt fest, welche Komponenten in der Packliste dieser Tour angezeigt werden.
+              </p>
+            </div>
+            <input type="hidden" name="preset_id" value={presetId} />
+          </section>
+        </>
+      )}
 
       <Separator className="border-cockpit-border" />
 
