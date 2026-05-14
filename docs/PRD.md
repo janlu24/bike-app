@@ -34,6 +34,7 @@ The Setup Registry ist ein digitaler Zwilling für sportliche Radsport-Enthusias
 | P1 | PROJ-15: Bike Preset Manager & Tour Integration | Planned |
 | P1 | PROJ-16: Structural Split – Inventory vs. Workshop | Planned |
 | P1 | PROJ-17: Preset Sandbox Mode | Planned |
+| P1 | PROJ-18: Super-Packlist & System Logic Alignment | Planned |
 
 ## Success Metrics
 - Aktiv geteilte Setups: Nutzer mit `is_public = true` auf Profil und mindestens einem Item

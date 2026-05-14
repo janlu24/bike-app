@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatWeight, parseToGrams, gramsToInputValue } from "./weight";
+import { formatWeight, formatWeight3dp, parseToGrams, gramsToInputValue } from "./weight";
 
 describe("formatWeight", () => {
   it("returns '–' for null", () => expect(formatWeight(null)).toBe("–"));
@@ -11,6 +11,19 @@ describe("formatWeight", () => {
   it("formats 7500 g as 7,5 kg", () => expect(formatWeight(7500)).toBe("7,5 kg"));
   it("formats 7452 g as 7,452 kg", () => expect(formatWeight(7452)).toBe("7,452 kg"));
   it("formats 8000 g as 8 kg (no trailing decimals)", () => expect(formatWeight(8000)).toBe("8 kg"));
+});
+
+describe("formatWeight3dp", () => {
+  it("returns '–' for null", () => expect(formatWeight3dp(null)).toBe("–"));
+  it("returns '–' for undefined", () => expect(formatWeight3dp(undefined)).toBe("–"));
+  it("formats 0 g as 0,000 kg", () => expect(formatWeight3dp(0)).toBe("0,000 kg"));
+  it("formats 1000 g as 1,000 kg", () => expect(formatWeight3dp(1000)).toBe("1,000 kg"));
+  it("formats 7500 g as 7,500 kg (no trailing zero stripping)", () => expect(formatWeight3dp(7500)).toBe("7,500 kg"));
+  it("formats 7452 g as 7,452 kg", () => expect(formatWeight3dp(7452)).toBe("7,452 kg"));
+  it("formats 11450 g as 11,450 kg", () => expect(formatWeight3dp(11450)).toBe("11,450 kg"));
+  it("formats 17770 g as 17,770 kg", () => expect(formatWeight3dp(17770)).toBe("17,770 kg"));
+  it("formats 500 g as 0,500 kg (sub-threshold still uses kg)", () => expect(formatWeight3dp(500)).toBe("0,500 kg"));
+  it("rounds before formatting: 7452.6 → 7453 g → 7,453 kg", () => expect(formatWeight3dp(7452.6)).toBe("7,453 kg"));
 });
 
 describe("parseToGrams — unit g", () => {

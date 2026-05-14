@@ -255,6 +255,7 @@ export type Database = {
         Row: {
           added_at: string
           id: string
+          is_checked: boolean
           item_id: string
           note: string | null
           rating: number | null
@@ -263,6 +264,7 @@ export type Database = {
         Insert: {
           added_at?: string
           id?: string
+          is_checked?: boolean
           item_id: string
           note?: string | null
           rating?: number | null
@@ -271,6 +273,7 @@ export type Database = {
         Update: {
           added_at?: string
           id?: string
+          is_checked?: boolean
           item_id?: string
           note?: string | null
           rating?: number | null

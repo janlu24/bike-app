@@ -10,7 +10,15 @@ export function formatWeight(grams: number | null | undefined): string {
   if (rounded < KG_THRESHOLD) {
     return `${rounded.toLocaleString("de-DE")} g`;
   }
-  return `${(rounded / 1000).toFixed(3).replace(".", ",")} kg`;
+  return `${(rounded / 1000).toFixed(3).replace(".", ",").replace(/,?0+$/, "")} kg`;
+}
+
+/** Always renders in kg with exactly 3 decimal places and German comma, e.g. "11,450 kg". */
+export function formatWeight3dp(grams: number | null | undefined): string {
+  if (grams === null || grams === undefined || !Number.isFinite(grams)) {
+    return "–";
+  }
+  return `${(Math.round(grams) / 1000).toFixed(3).replace(".", ",")} kg`;
 }
 
 export function parseToGrams(

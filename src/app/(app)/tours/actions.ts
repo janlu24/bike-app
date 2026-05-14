@@ -187,6 +187,20 @@ export async function addTourItemAction(tourId: string, itemId: string): Promise
 
   if (!tour) return { error: "Tour nicht gefunden." };
 
+  // Category guard: only Gear and Clothing may be added to a tour packlist.
+  // Bikes come via the preset; Parts are auto-included as bike children.
+  const { data: item } = await supabase
+    .from("items")
+    .select("id, category")
+    .eq("id", itemId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!item) return { error: "Item nicht gefunden." };
+  if (item.category !== "Gear" && item.category !== "Clothing") {
+    return { error: "Nur Equipment und Bekleidung können der Packliste hinzugefügt werden." };
+  }
+
   const { error } = await supabase
     .from("tour_items")
     .insert({ tour_id: tourId, item_id: itemId });
@@ -197,6 +211,49 @@ export async function addTourItemAction(tourId: string, itemId: string): Promise
   }
 
   revalidatePath(`/tours/${tourId}`);
+  return {};
+}
+
+export async function toggleCheckOffAction(
+  tourId: string,
+  itemId: string,
+  isChecked: boolean,
+): Promise<{ error?: string }> {
+  if (!isValidTourId(tourId) || !isValidTourId(itemId)) {
+    return { error: "Ungültige ID." };
+  }
+
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  let user: { id: string };
+  try {
+    ({ supabase, user } = await requireUser());
+  } catch {
+    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+  }
+
+  // Verify tour ownership (defense in depth on top of RLS).
+  const { data: tour } = await supabase
+    .from("tours")
+    .select("id")
+    .eq("id", tourId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!tour) return { error: "Tour nicht gefunden." };
+
+  // Upsert creates a tour_items row for child items (e.g. preset components)
+  // that don't have an explicit row yet — same pattern as upsertFeedbackAction.
+  const { error } = await supabase
+    .from("tour_items")
+    .upsert(
+      { tour_id: tourId, item_id: itemId, is_checked: isChecked },
+      { onConflict: "tour_id,item_id" },
+    );
+
+  if (error) {
+    return { error: "Speichern fehlgeschlagen." };
+  }
+
   return {};
 }
 

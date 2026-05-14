@@ -517,14 +517,16 @@ export async function addItemToPresetAction(
     .maybeSingle();
   if (!preset) return { error: "Preset nicht gefunden." };
 
+  // Category guard: only Part (Komponenten) may be added to a preset.
+  // Bikes, Gear, and Clothing are excluded from preset configurations.
   const { data: item } = await supabase
     .from("items")
     .select("id")
     .eq("id", parsed.data.itemId)
     .eq("user_id", user.id)
-    .neq("category", "Bike")
+    .eq("category", "Part")
     .maybeSingle();
-  if (!item) return { error: "Item nicht gefunden." };
+  if (!item) return { error: "Nur Komponenten können einem Preset hinzugefügt werden." };
 
   const { error } = await supabase
     .from("preset_items")
