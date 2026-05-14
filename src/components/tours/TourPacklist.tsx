@@ -84,7 +84,7 @@ export function TourPacklist({
     clothingEntries.reduce((s, e) => s + (e.item.weight_g ?? 0), 0);
   const totalWeightG = bikeSetupWeightG + payloadWeightG;
   const showWeights =
-    activeBike?.weight_g !== null ||
+    (activeBike !== null && activeBike.weight_g !== null) ||
     bikeChildren.some((c) => c.weight_g !== null) ||
     gearEntries.some((e) => e.item.weight_g !== null) ||
     clothingEntries.some((e) => e.item.weight_g !== null);
@@ -178,7 +178,7 @@ export function TourPacklist({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-widest text-cockpit-muted">Packliste</p>
-          <h2 id="packlist-heading" className="text-lg font-semibold text-cockpit-text">
+          <h2 id="packlist-heading" className="text-lg font-semibold text-cockpit-text" aria-live="polite">
             {totalCount > 0 ? `${checkedCount} / ${totalCount} abgehakt` : "Keine Items"}
           </h2>
         </div>
