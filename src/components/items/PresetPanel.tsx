@@ -22,6 +22,7 @@ import {
   GitBranch,
   Pencil,
   Play,
+  Plus,
   SlidersHorizontal,
   Trash2,
   X,
@@ -35,6 +36,8 @@ interface PresetPanelProps {
   initialPresets: BikePresetWithItems[];
   currentPartIds: string[];
   onPresetApplied: (diff: PresetApplyDiff) => void;
+  liveTotalWeightG: number;
+  bikeWeightG: number | null;
 }
 
 export function PresetPanel({
@@ -42,9 +45,13 @@ export function PresetPanel({
   initialPresets,
   currentPartIds,
   onPresetApplied,
+  liveTotalWeightG,
+  bikeWeightG,
 }: PresetPanelProps) {
   const [presets, setPresets] = useState(initialPresets);
   const [createOpen, setCreateOpen] = useState(false);
+  const [newPlanOpen, setNewPlanOpen] = useState(false);
+  const [newPlanSandboxTarget, setNewPlanSandboxTarget] = useState<BikePresetWithItems | null>(null);
 
   const currentPartIdSet = new Set(currentPartIds);
 
@@ -58,6 +65,12 @@ export function PresetPanel({
           : [],
       },
     ]);
+  }
+
+  function handleCreatedEmpty(preset: BikePresetRow, _wasSnapshotted: boolean) {
+    const newPreset: BikePresetWithItems = { ...preset, preset_items: [] };
+    setPresets((prev) => [...prev, newPreset]);
+    setNewPlanSandboxTarget(newPreset);
   }
 
   function handleRenamed(id: string, name: string) {
@@ -98,15 +111,26 @@ export function PresetPanel({
           <span className="text-[11px] text-cockpit-muted">· {presets.length}</span>
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setCreateOpen(true)}
-          className="h-7 border-cockpit-border px-2.5 text-xs text-cockpit-muted hover:border-petrol-600 hover:text-petrol-300"
-        >
-          <GitBranch size={11} strokeWidth={1.75} aria-hidden className="mr-1.5" />
-          Als Preset speichern
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setNewPlanOpen(true)}
+            title="Neues leeres Preset erstellen und direkt bearbeiten"
+            className="h-7 border-cockpit-border px-2 text-xs text-cockpit-muted hover:border-amber-700/60 hover:text-amber-300"
+          >
+            <Plus size={11} strokeWidth={2} aria-hidden />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCreateOpen(true)}
+            className="h-7 border-cockpit-border px-2.5 text-xs text-cockpit-muted hover:border-petrol-600 hover:text-petrol-300"
+          >
+            <GitBranch size={11} strokeWidth={1.75} aria-hidden className="mr-1.5" />
+            Als Preset speichern
+          </Button>
+        </div>
       </header>
 
       {presets.length === 0 ? (
@@ -126,6 +150,8 @@ export function PresetPanel({
               onDeleted={handleDeleted}
               onApplied={handleApplied}
               onItemsChanged={handleItemsChanged}
+              liveTotalWeightG={liveTotalWeightG}
+              bikeWeightG={bikeWeightG}
             />
           ))}
         </ul>
@@ -138,6 +164,27 @@ export function PresetPanel({
         currentPartCount={currentPartIds.length}
         onCreated={handleCreated}
       />
+
+      <CreatePresetDialog
+        open={newPlanOpen}
+        onOpenChange={setNewPlanOpen}
+        bikeId={bikeId}
+        currentPartCount={0}
+        onCreated={handleCreatedEmpty}
+        planningMode
+      />
+
+      {newPlanSandboxTarget && (
+        <PresetSandboxSheet
+          open={true}
+          onOpenChange={(open) => { if (!open) setNewPlanSandboxTarget(null); }}
+          preset={newPlanSandboxTarget}
+          onPresetItemsChanged={handleItemsChanged}
+          liveTotalWeightG={liveTotalWeightG}
+          bikeWeightG={bikeWeightG}
+          onPresetApplied={onPresetApplied}
+        />
+      )}
     </section>
   );
 }
@@ -149,6 +196,8 @@ function PresetCard({
   onDeleted,
   onApplied,
   onItemsChanged,
+  liveTotalWeightG,
+  bikeWeightG,
 }: {
   preset: BikePresetWithItems;
   currentPartIdSet: Set<string>;
@@ -156,6 +205,8 @@ function PresetCard({
   onDeleted: (id: string) => void;
   onApplied: (diff: PresetApplyDiff) => void;
   onItemsChanged: (presetId: string, newItemIds: string[]) => void;
+  liveTotalWeightG: number;
+  bikeWeightG: number | null;
 }) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(preset.name);
@@ -422,6 +473,12 @@ function PresetCard({
         onOpenChange={setSandboxOpen}
         preset={preset}
         onPresetItemsChanged={onItemsChanged}
+        liveTotalWeightG={liveTotalWeightG}
+        bikeWeightG={bikeWeightG}
+        onPresetApplied={(diff) => {
+          setSandboxOpen(false);
+          onApplied(diff);
+        }}
       />
     </li>
   );

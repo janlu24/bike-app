@@ -30,6 +30,9 @@
 | PROJ-14 | Bike Versioning System | Approved | [PROJ-14-bike-versioning-system.md](PROJ-14-bike-versioning-system.md) | 2026-05-13 |
 | PROJ-15 | Bike Preset Manager & Tour Integration | Approved | [PROJ-15-bike-preset-manager.md](PROJ-15-bike-preset-manager.md) | 2026-05-13 |
 
+| PROJ-16 | Structural Split – Inventory vs. Workshop | Approved | [PROJ-16-structural-split-inventory-workshop.md](PROJ-16-structural-split-inventory-workshop.md) | 2026-05-13 |
+| PROJ-17 | Preset Sandbox Mode | Approved | [PROJ-17-preset-sandbox-mode.md](PROJ-17-preset-sandbox-mode.md) | 2026-05-14 |
+
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-16
+## Next Available ID: PROJ-18

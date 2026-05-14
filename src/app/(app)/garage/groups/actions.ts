@@ -61,7 +61,7 @@ export async function createGroupAction(
   }
 
   revalidatePath("/garage/groups");
-  redirect("/garage/groups");
+  redirect("/inventory/groups");
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +163,7 @@ export async function updateGroupAction(
   revalidatePath("/garage/groups");
   revalidatePath(`/garage/groups/${groupId}/edit`);
   revalidatePath(`/garage/groups/${groupId}/compare`);
-  redirect("/garage/groups");
+  redirect("/inventory/groups");
 }
 
 // ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ export async function deleteGroupAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id || !isValidGroupId(id)) {
     revalidatePath("/garage/groups");
-    redirect("/garage/groups");
+    redirect("/inventory/groups");
   }
 
   const { supabase, user } = await requireUser();
@@ -187,5 +187,5 @@ export async function deleteGroupAction(formData: FormData): Promise<void> {
     .eq("user_id", user.id);
 
   revalidatePath("/", "layout");
-  redirect("/garage/groups");
+  redirect("/inventory/groups");
 }

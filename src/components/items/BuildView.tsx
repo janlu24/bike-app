@@ -139,7 +139,7 @@ export function BuildView({ build: initialBuild, availableParts: initialAvailabl
               {bike.is_public ? "Öffentlich" : "Privat"}
             </span>
             <Link
-              href={`/garage/${bike.id}`}
+              href={`/inventory/${bike.id}`}
               className="inline-flex items-center gap-1.5 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
             >
               <Eye size={12} strokeWidth={1.75} aria-hidden />
@@ -153,17 +153,7 @@ export function BuildView({ build: initialBuild, availableParts: initialAvailabl
         <Stat
           icon={<Scale size={14} strokeWidth={1.75} aria-hidden />}
           label="Gesamtgewicht"
-          value={
-            totalWeight > 0 || !hasUnknownWeight
-              ? formatWeight(totalWeight)
-              : "–"
-          }
-          hint={
-            hasUnknownWeight
-              ? "Einige Gewichte fehlen – Summe ist ein Mindestwert."
-              : undefined
-          }
-          approximate={hasUnknownWeight && totalWeight > 0}
+          value={formatWeight(totalWeight)}
         />
         <Stat
           icon={<Wrench size={14} strokeWidth={1.75} aria-hidden />}
@@ -225,6 +215,8 @@ export function BuildView({ build: initialBuild, availableParts: initialAvailabl
         initialPresets={initialPresets}
         currentPartIds={parts.map((p) => p.id)}
         onPresetApplied={handlePresetApplied}
+        liveTotalWeightG={totalWeight}
+        bikeWeightG={bike.weight_g}
       />
     </div>
   );
@@ -274,14 +266,10 @@ function Stat({
   icon,
   label,
   value,
-  hint,
-  approximate,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  hint?: string;
-  approximate?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-cockpit-border bg-cockpit-surface p-3">
@@ -289,15 +277,7 @@ function Stat({
         {icon}
         <dt className="text-[10px] uppercase tracking-widest">{label}</dt>
       </div>
-      <dd className="mt-1 text-xl text-cockpit-text">
-        {approximate && (
-          <span aria-hidden className="mr-0.5 text-petrol-400">
-            ≥
-          </span>
-        )}
-        {value}
-      </dd>
-      {hint && <p className="mt-1 text-[11px] text-cockpit-muted">{hint}</p>}
+      <dd className="mt-1 text-xl text-cockpit-text">{value}</dd>
     </div>
   );
 }

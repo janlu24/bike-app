@@ -139,8 +139,8 @@ export async function createItemAction(
   const rawRedirectGroupId = String(formData.get("redirect_group_id") ?? "").trim();
   const destination =
     group_id && rawRedirectGroupId === group_id
-      ? `/garage/groups/${group_id}/compare`
-      : `/garage/${newItem.id}`;
+      ? `/inventory/groups/${group_id}/compare`
+      : `/inventory/${newItem.id}`;
   redirect(destination);
 }
 
@@ -211,15 +211,15 @@ export async function updateItemAction(
   }
 
   revalidatePath("/", "layout");
-  revalidatePath(`/garage/${itemId}`);
-  redirect(`/garage/${itemId}`);
+  revalidatePath(`/inventory/${itemId}`);
+  redirect(`/inventory/${itemId}`);
 }
 
 export async function deleteItemAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) {
     revalidatePath("/", "layout");
-    redirect("/garage");
+    redirect("/inventory");
   }
 
   const { supabase, user } = await requireUser();
@@ -238,7 +238,7 @@ export async function deleteItemAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/", "layout");
-  redirect("/garage");
+  redirect("/inventory");
 }
 
 const generalNoteSchema = z.object({
@@ -444,8 +444,10 @@ export async function createPresetAction(
   return { ok: true, preset };
 }
 
+export type SandboxBike = { id: string; brand: string; model: string | null };
+
 export type SandboxDataResult =
-  | { ok: true; allUserItems: ItemRow[]; currentPresetItemIds: string[] }
+  | { ok: true; allUserItems: ItemRow[]; currentPresetItemIds: string[]; userBikes: SandboxBike[] }
   | { error: string };
 
 export async function getPresetSandboxDataAction(presetId: string): Promise<SandboxDataResult> {
@@ -470,15 +472,26 @@ export async function getPresetSandboxDataAction(presetId: string): Promise<Sand
 
   const currentPresetItemIds = (preset.preset_items as { item_id: string }[]).map((pi) => pi.item_id);
 
-  const { data: allItems } = await supabase
-    .from("items")
-    .select("*")
-    .eq("user_id", user.id)
-    .neq("category", "Bike")
-    .is("deleted_at", null)
-    .order("brand", { ascending: true });
+  const [{ data: allItems }, { data: bikes }] = await Promise.all([
+    supabase
+      .from("items")
+      .select("*")
+      .eq("user_id", user.id)
+      .neq("category", "Bike")
+      .order("brand", { ascending: true }),
+    supabase
+      .from("items")
+      .select("id, brand, model")
+      .eq("user_id", user.id)
+      .eq("category", "Bike"),
+  ]);
 
-  return { ok: true, allUserItems: (allItems ?? []) as ItemRow[], currentPresetItemIds };
+  return {
+    ok: true,
+    allUserItems: (allItems ?? []) as ItemRow[],
+    currentPresetItemIds,
+    userBikes: (bikes ?? []) as SandboxBike[],
+  };
 }
 
 export async function addItemToPresetAction(

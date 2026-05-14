@@ -150,7 +150,7 @@ export function ItemCard({ item, parent, headerActions }: ItemCardProps) {
 
         <footer className="mt-auto flex justify-end">
           <Link
-            href={`/garage/${item.id}`}
+            href={`/inventory/${item.id}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-cockpit-border px-2.5 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
           >
             <Eye size={12} strokeWidth={1.75} aria-hidden />

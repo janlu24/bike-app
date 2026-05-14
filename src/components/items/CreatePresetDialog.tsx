@@ -22,6 +22,7 @@ interface CreatePresetDialogProps {
   bikeId: string;
   currentPartCount?: number;
   onCreated: (preset: BikePresetRow, wasSnapshotted: boolean) => void;
+  planningMode?: boolean;
 }
 
 export function CreatePresetDialog({
@@ -30,6 +31,7 @@ export function CreatePresetDialog({
   bikeId,
   currentPartCount = 0,
   onCreated,
+  planningMode = false,
 }: CreatePresetDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -68,7 +70,7 @@ export function CreatePresetDialog({
       <DialogContent className="border-cockpit-border bg-cockpit-surface sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold tracking-tight">
-            Preset speichern
+            {planningMode ? "Neues Preset planen" : "Preset speichern"}
           </DialogTitle>
         </DialogHeader>
 

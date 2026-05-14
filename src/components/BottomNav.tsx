@@ -1,18 +1,18 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bike, Compass, Home, Map, User } from "lucide-react";
+import { Bike, Compass, Map, Package, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type NavItem = {
   href: string;
   label: string;
-  Icon: typeof Home;
+  Icon: typeof Package;
 };
 
 const items: NavItem[] = [
-  { href: "/", label: "Dashboard", Icon: Home },
+  { href: "/inventory", label: "Lager", Icon: Package },
   { href: "/garage", label: "Garage", Icon: Bike },
   { href: "/tours", label: "Touren", Icon: Map },
   { href: "/explore", label: "Entdecken", Icon: Compass },

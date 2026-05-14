@@ -309,11 +309,11 @@ test.describe("Barrierefreiheit (A11y)", () => {
     await expect(page.getByRole("navigation", { name: "Hauptnavigation" })).toBeVisible();
   });
 
-  test("Dashboard-Eintrag in BottomNav hat aria-current='page'", async ({ page }) => {
+  test("Lager-Eintrag in BottomNav vorhanden (Dashboard wurde durch Lager ersetzt in PROJ-16)", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("link", { name: /Dashboard/i })
-    ).toHaveAttribute("aria-current", "page");
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    const lagerLink = nav.locator('a[href="/inventory"]');
+    await expect(lagerLink).toBeVisible();
   });
 
   test("Login-Seite: URL-Fehlermeldung hat role='alert'", async ({ page }) => {

@@ -30,13 +30,13 @@ export function MemberDashboard({ username, counts }: MemberDashboardProps) {
 
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" className="text-cockpit-muted hover:text-cockpit-text">
-            <Link href="/garage" aria-label="Zur Garage">
+            <Link href="/inventory" aria-label="Zum Lager">
               <ArrowRight size={16} strokeWidth={2} aria-hidden />
-              Zur Garage
+              Zum Lager
             </Link>
           </Button>
           <Link
-            href="/garage/new"
+            href="/inventory/new"
             aria-label="Neues Item anlegen"
             className="inline-flex items-center gap-2 rounded-md border border-petrol-700 bg-petrol-600 px-3.5 py-2 text-sm font-medium text-white shadow-cockpit transition-colors hover:bg-petrol-500"
           >

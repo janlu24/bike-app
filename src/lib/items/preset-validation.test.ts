@@ -4,6 +4,7 @@ import {
   renamePresetSchema,
   presetIdSchema,
   applyPresetSchema,
+  presetItemSchema,
 } from "./preset-validation";
 
 const VALID_UUID_A = "550e8400-e29b-41d4-a716-446655440000";
@@ -194,6 +195,103 @@ describe("applyPresetSchema — invalid inputs", () => {
 
   it("rejects SQL injection", () => {
     const r = applyPresetSchema.safeParse({ presetId: "' OR '1'='1" });
+    expect(r.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// presetItemSchema — used by addItemToPresetAction / removeItemFromPresetAction
+// ---------------------------------------------------------------------------
+describe("presetItemSchema — valid inputs", () => {
+  it("accepts valid presetId and itemId", () => {
+    const r = presetItemSchema.safeParse({ presetId: VALID_UUID_A, itemId: VALID_UUID_B });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts two different valid UUIDs", () => {
+    const r = presetItemSchema.safeParse({
+      presetId: VALID_UUID_B,
+      itemId: VALID_UUID_A,
+    });
+    expect(r.success).toBe(true);
+  });
+});
+
+describe("presetItemSchema — invalid presetId", () => {
+  it("rejects non-UUID presetId", () => {
+    const r = presetItemSchema.safeParse({ presetId: "not-a-uuid", itemId: VALID_UUID_B });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects empty presetId", () => {
+    const r = presetItemSchema.safeParse({ presetId: "", itemId: VALID_UUID_B });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects SQL injection in presetId", () => {
+    const r = presetItemSchema.safeParse({
+      presetId: "'; DROP TABLE preset_items; --",
+      itemId: VALID_UUID_B,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects XSS payload in presetId", () => {
+    const r = presetItemSchema.safeParse({
+      presetId: "<script>alert(1)</script>",
+      itemId: VALID_UUID_B,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects path traversal in presetId", () => {
+    const r = presetItemSchema.safeParse({
+      presetId: "../../etc/passwd",
+      itemId: VALID_UUID_B,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects missing presetId", () => {
+    const r = presetItemSchema.safeParse({ itemId: VALID_UUID_B });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("presetItemSchema — invalid itemId", () => {
+  it("rejects non-UUID itemId", () => {
+    const r = presetItemSchema.safeParse({ presetId: VALID_UUID_A, itemId: "bad-id" });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects empty itemId", () => {
+    const r = presetItemSchema.safeParse({ presetId: VALID_UUID_A, itemId: "" });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects SQL injection in itemId", () => {
+    const r = presetItemSchema.safeParse({
+      presetId: VALID_UUID_A,
+      itemId: "' OR '1'='1",
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects XSS payload in itemId", () => {
+    const r = presetItemSchema.safeParse({
+      presetId: VALID_UUID_A,
+      itemId: "<img src=x onerror=alert(1)>",
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects missing itemId", () => {
+    const r = presetItemSchema.safeParse({ presetId: VALID_UUID_A });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects both fields missing", () => {
+    const r = presetItemSchema.safeParse({});
     expect(r.success).toBe(false);
   });
 });

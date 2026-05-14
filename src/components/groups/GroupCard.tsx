@@ -56,7 +56,7 @@ export function GroupCard({
         {/* Compare */}
         {canCompare ? (
           <Link
-            href={`/garage/groups/${id}/compare`}
+            href={`/inventory/groups/${id}/compare`}
             className="inline-flex items-center gap-1 rounded-md border border-cockpit-border px-2 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
             title="Vergleichsansicht"
           >
@@ -76,7 +76,7 @@ export function GroupCard({
 
         {/* Edit */}
         <Link
-          href={`/garage/groups/${id}/edit`}
+          href={`/inventory/groups/${id}/edit`}
           className="inline-flex items-center gap-1 rounded-md border border-cockpit-border px-2 py-1 text-xs text-cockpit-muted transition-colors hover:border-petrol-600 hover:text-petrol-300"
           title="Gruppe bearbeiten"
         >

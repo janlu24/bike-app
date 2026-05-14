@@ -26,7 +26,7 @@ export function EmptyState({ filtered, hint }: EmptyStateProps) {
       </p>
 
       <Link
-        href="/garage/new"
+        href="/inventory/new"
         className="mt-5 inline-flex items-center gap-2 rounded-md border border-petrol-700 bg-petrol-600 px-3.5 py-2 text-sm font-medium text-white shadow-cockpit transition-colors hover:bg-petrol-500"
       >
         <Plus size={16} strokeWidth={2} aria-hidden />

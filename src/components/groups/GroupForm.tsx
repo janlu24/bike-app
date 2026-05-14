@@ -219,7 +219,7 @@ export function GroupForm({
               : isEdit ? "Änderungen speichern" : "Gruppe anlegen"}
           </button>
           <Link
-            href="/garage/groups"
+            href="/inventory/groups"
             className="inline-flex items-center gap-2 rounded-md border border-cockpit-border px-4 py-2 text-sm text-cockpit-muted hover:text-cockpit-text"
           >
             <X size={16} strokeWidth={2} aria-hidden />

@@ -10,9 +10,7 @@ export function formatWeight(grams: number | null | undefined): string {
   if (rounded < KG_THRESHOLD) {
     return `${rounded.toLocaleString("de-DE")} g`;
   }
-  const kg = rounded / 1000;
-  const trimmed = kg.toFixed(3).replace(/\.?0+$/, "");
-  return `${trimmed.replace(".", ",")} kg`;
+  return `${(rounded / 1000).toFixed(3).replace(".", ",")} kg`;
 }
 
 export function parseToGrams(

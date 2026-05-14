@@ -79,10 +79,11 @@ test.describe("Grundstruktur", () => {
     await expect(page.getByRole("navigation", { name: "Hauptnavigation" })).toBeVisible();
   });
 
-  test("Dashboard-Eintrag in BottomNav ist aktiv (aria-current=page)", async ({ page }) => {
+  test("Lager-Eintrag in BottomNav existiert (Dashboard wurde durch Lager ersetzt in PROJ-16)", async ({ page }) => {
     await page.goto("/");
-    const dashboardNav = page.getByRole("link", { name: /Dashboard/i });
-    await expect(dashboardNav).toHaveAttribute("aria-current", "page");
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    const lagerLink = nav.locator('a[href="/inventory"]');
+    await expect(lagerLink).toBeVisible();
   });
 });
 
