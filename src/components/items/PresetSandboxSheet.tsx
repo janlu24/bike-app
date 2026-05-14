@@ -153,7 +153,7 @@ export function PresetSandboxSheet({
 
   // Derived: items in preset vs available — only meaningful after fetch
   const inPreset = topLevelItems.filter((i) => presetItemIds.has(i.id));
-  const available = topLevelItems.filter((i) => !presetItemIds.has(i.id));
+  const available = topLevelItems.filter((i) => !presetItemIds.has(i.id) && i.category === "Part");
 
   // Weight calculation
   const presetWeightG =
@@ -364,7 +364,7 @@ export function PresetSandboxSheet({
                   <div className="flex flex-col overflow-hidden">
                     <div className="flex shrink-0 items-center justify-between border-b border-cockpit-border/60 px-4 py-2.5">
                       <h2 className="text-[10px] uppercase tracking-widest text-cockpit-muted">
-                        Verfügbar im Lager
+                        Verfügbar im Lager (Komponenten)
                       </h2>
                       <span className="text-[10px] text-cockpit-muted">{available.length} Items</span>
                     </div>
@@ -374,8 +374,8 @@ export function PresetSandboxSheet({
                         <div className="flex h-40 items-center justify-center px-6 text-center">
                           <p className="text-[11px] text-cockpit-muted">
                             {allUserItems.length === 0
-                              ? "Keine Items in der Garage vorhanden."
-                              : "Alle Items sind bereits im Preset."}
+                              ? "Keine Komponenten in der Garage vorhanden."
+                              : "Alle Komponenten sind bereits im Preset."}
                           </p>
                         </div>
                       ) : (

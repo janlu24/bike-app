@@ -32,7 +32,8 @@
 
 | PROJ-16 | Structural Split – Inventory vs. Workshop | Approved | [PROJ-16-structural-split-inventory-workshop.md](PROJ-16-structural-split-inventory-workshop.md) | 2026-05-13 |
 | PROJ-17 | Preset Sandbox Mode | Approved | [PROJ-17-preset-sandbox-mode.md](PROJ-17-preset-sandbox-mode.md) | 2026-05-14 |
+| PROJ-18 | Super-Packlist & System Logic Alignment | In Review | [PROJ-18-super-packlist-system-logic.md](PROJ-18-super-packlist-system-logic.md) | 2026-05-14 |
 
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-18
+## Next Available ID: PROJ-19

@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addTourItemAction } from "@/app/(app)/tours/actions";
-import { CATEGORY_CONFIG, ITEM_CATEGORIES } from "@/lib/items/categories";
+import { CATEGORY_CONFIG } from "@/lib/items/categories";
 import { formatWeight } from "@/lib/utils/weight";
 import type { ItemCategory, ItemRow } from "@/types/supabase";
+
+const PACKLIST_CATEGORIES: ItemCategory[] = ["Gear", "Clothing"];
 import { Check, Plus, Search } from "lucide-react";
 
 interface ItemPickerSheetProps {
@@ -103,9 +105,9 @@ export function ItemPickerSheet({ tourId, garageItems, packlistItemIds }: ItemPi
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
           <TabsList className="shrink-0 w-full justify-start gap-1 bg-cockpit-bg/60 mb-3 h-8 px-1">
             <TabsTrigger value={ALL_TAB} className="text-xs h-6 px-2.5">Alle</TabsTrigger>
-            {ITEM_CATEGORIES.map((cat) => (
+            {PACKLIST_CATEGORIES.map((cat) => (
               <TabsTrigger key={cat} value={cat} className="text-xs h-6 px-2.5">
-                {CATEGORY_CONFIG[cat as ItemCategory].label}
+                {CATEGORY_CONFIG[cat].label}
               </TabsTrigger>
             ))}
           </TabsList>

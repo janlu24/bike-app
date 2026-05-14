@@ -27,16 +27,21 @@ export default async function ToursPage() {
       ).data ?? [])
     : [];
 
-  // Load item counts per tour in one query.
+  // Load item counts and payload weights per tour in one query each.
   const tourIds = tours.map((t) => t.id);
   const itemCountMap: Record<string, number> = {};
+  const weightMap: Record<string, number> = {};
   if (tourIds.length > 0) {
-    const { data: counts } = await supabase
+    const { data: tourItemRows } = await supabase
       .from("tour_items")
-      .select("tour_id")
+      .select("tour_id, items(weight_g)")
       .in("tour_id", tourIds);
-    for (const row of counts ?? []) {
+    for (const row of tourItemRows ?? []) {
       itemCountMap[row.tour_id] = (itemCountMap[row.tour_id] ?? 0) + 1;
+      const w = (row.items as { weight_g: number | null } | null)?.weight_g;
+      if (w !== null && w !== undefined) {
+        weightMap[row.tour_id] = (weightMap[row.tour_id] ?? 0) + w;
+      }
     }
   }
 
@@ -83,6 +88,7 @@ export default async function ToursPage() {
               key={tour.id}
               tour={tour}
               itemCount={itemCountMap[tour.id] ?? 0}
+              totalWeightG={weightMap[tour.id]}
             />
           ))}
         </div>

@@ -33,10 +33,10 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
   const isOwner = user?.id === tour.user_id;
 
-  // Load packlist items with a join, including feedback columns.
+  // Load packlist items with a join, including feedback and check state.
   const { data: tourItems } = await supabase
     .from("tour_items")
-    .select("id, item_id, rating, note, items(*)")
+    .select("id, item_id, rating, note, is_checked, items(*)")
     .eq("tour_id", id)
     .order("added_at", { ascending: true });
 
@@ -45,10 +45,10 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     item: ti.items as unknown as ItemRow,
     rating: ti.rating,
     note: ti.note,
+    is_checked: ti.is_checked,
   }));
 
   // Load child items (garage items whose parent_id is one of the packlist items).
-  // These are automatically "included" in the tour weight — not explicitly added.
   const packlistItemIds = packlistEntries.map((e) => e.item.id);
   let childItemMap: Map<string, ItemRow[]> = new Map();
   if (packlistItemIds.length > 0) {
@@ -68,9 +68,11 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     }
   }
 
-  // Preset override: if tour has a preset_id, replace the bike's live children with preset items.
+  // Preset override: replace the bike's live children with preset items.
   const presetBadgeMap = new Map<string, string>();
   const tourRow = tour as TourRow;
+  let presetBikeId: string | undefined;
+
   if (tourRow.preset_id) {
     const { data: preset } = await supabase
       .from("bike_presets")
@@ -79,6 +81,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
       .maybeSingle();
 
     if (preset) {
+      presetBikeId = preset.bike_id;
       const presetItemIds = (preset.preset_items as { item_id: string }[]).map((pi) => pi.item_id);
       if (presetItemIds.length > 0) {
         const { data: presetItems } = await supabase
@@ -95,37 +98,57 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
     }
   }
 
-  // Collect all child item IDs to load their feedback and deduplicate the main list.
+  // Collect all child item IDs for feedback loading.
   const allChildIds: string[] = [];
   for (const children of childItemMap.values()) {
     for (const child of children) allChildIds.push(child.id);
   }
 
-  // Load existing feedback for child items (they may have tour_items rows from prior saves).
-  const childFeedbackMap: Map<string, { rating: number | null; note: string | null }> = new Map();
+  // Load existing feedback + check state for child items.
+  const childFeedbackMap: Map<string, { rating: number | null; note: string | null; is_checked: boolean }> = new Map();
   if (allChildIds.length > 0) {
     const { data: childFeedback } = await supabase
       .from("tour_items")
-      .select("item_id, rating, note")
+      .select("item_id, rating, note, is_checked")
       .eq("tour_id", id)
       .in("item_id", allChildIds);
     for (const row of childFeedback ?? []) {
-      childFeedbackMap.set(row.item_id, { rating: row.rating, note: row.note });
+      childFeedbackMap.set(row.item_id, {
+        rating: row.rating,
+        note: row.note,
+        is_checked: row.is_checked,
+      });
     }
   }
 
   // Filter the main packlist: exclude items that are auto-included children.
-  // This prevents duplicate display if a child item gained its own tour_items row via feedback upsert.
   const childItemIdSet = new Set(allChildIds);
   const displayedPacklistEntries = packlistEntries.filter((e) => !childItemIdSet.has(e.item.id));
 
-  // Load all garage items for the item picker (only for owner).
+  // If a preset is active and the bike is not already in displayedPacklistEntries,
+  // load it separately so the Bike-Setup section can show it.
+  let bikeSetupBike: ItemRow | undefined;
+  let bikeSetupBikeChecked = false;
+  if (presetBikeId) {
+    const bikeInEntries = displayedPacklistEntries.find((e) => e.item.id === presetBikeId);
+    if (!bikeInEntries) {
+      const [{ data: bikeItem }, { data: bikeCheckRow }] = await Promise.all([
+        supabase.from("items").select("*").eq("id", presetBikeId).maybeSingle(),
+        supabase.from("tour_items").select("is_checked").eq("tour_id", id).eq("item_id", presetBikeId).maybeSingle(),
+      ]);
+      if (bikeItem) bikeSetupBike = bikeItem as ItemRow;
+      bikeSetupBikeChecked = bikeCheckRow?.is_checked ?? false;
+    }
+  }
+
+  // Load garage items for the item picker (Gear + Clothing only).
   const garageItems: ItemRow[] = isOwner
     ? ((
         await supabase
           .from("items")
           .select("*")
           .eq("user_id", tour.user_id)
+          .in("category", ["Gear", "Clothing"])
           .order("category")
           .order("brand")
       ).data ?? [])
@@ -180,12 +203,16 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
       {/* Packlist */}
       <TourPacklist
         tourId={id}
+        tourName={tourRow.name}
+        tourDate={tourRow.start_date}
         entries={displayedPacklistEntries}
         childItemMap={childItemMap}
         childFeedbackMap={childFeedbackMap}
         garageItems={garageItems}
         isOwner={isOwner}
         presetBadgeMap={presetBadgeMap}
+        bikeSetupBike={bikeSetupBike}
+        bikeSetupBikeChecked={bikeSetupBikeChecked}
       />
     </div>
   );

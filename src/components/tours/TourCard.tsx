@@ -1,15 +1,17 @@
 import { TourStatusBadge } from "./TourStatusBadge";
 import { formatDistance, formatTourDate, getDisplayDistance } from "@/lib/tours/utils";
+import { formatWeight3dp } from "@/lib/utils/weight";
 import type { TourRow } from "@/types/supabase";
-import { MapPin, Package } from "lucide-react";
+import { MapPin, Package, Scale } from "lucide-react";
 import Link from "next/link";
 
 interface TourCardProps {
   tour: TourRow;
   itemCount: number;
+  totalWeightG?: number;
 }
 
-export function TourCard({ tour, itemCount }: TourCardProps) {
+export function TourCard({ tour, itemCount, totalWeightG }: TourCardProps) {
   const displayKm = getDisplayDistance(tour);
   const hasLocation = tour.start_location || tour.destination;
 
@@ -50,6 +52,12 @@ export function TourCard({ tour, itemCount }: TourCardProps) {
             <Package size={12} strokeWidth={1.75} aria-hidden />
             <span>{itemCount} Item{itemCount !== 1 ? "s" : ""}</span>
           </div>
+          {totalWeightG !== undefined && (
+            <div className="flex items-center gap-1.5 text-cockpit-muted">
+              <Scale size={12} strokeWidth={1.75} aria-hidden />
+              <span className="tabular-nums">{formatWeight3dp(totalWeightG)}</span>
+            </div>
+          )}
         </dl>
 
         <footer className="flex justify-end">
